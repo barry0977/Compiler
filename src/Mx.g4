@@ -22,7 +22,7 @@ returntype: type|Void;
 varDef: type Identifier ('=' expression)? (',' Identifier ('=' expression)?)* ';';
 funcDef: returntype Identifier '(' (type Identifier)? (',' type Identifier)*')'suite;
 construct: Identifier '(' ')'suite;
-classDef: Class Identifier '{'(varDef|funcDef';'|construct';')*'}'';';
+classDef: Class Identifier '{'(varDef|funcDef|construct)*'}'';';
 
 statement
     : suite                                                 #block
@@ -30,7 +30,7 @@ statement
     | If '(' expression ')' trueStmt=statement
         (Else falseStmt=statement)?                         #ifStmt
     | While '(' expression ')' statement                    #whileStmt
-    | For '('initStmt=statement expression ';' expression ')'
+    | For '('initStmt=statement expression? ';' expression? ')'
          statement                                          #forStmt
     | Break ';'                                             #breakStmt
     | Continue ';'                                          #continueStmt
@@ -41,37 +41,46 @@ statement
 
 
 expression
-    :New type ('('')')?
-    |New type ('['DecimalInteger?']')+ ConstArray?
-    |expression op=Fullstop Identifier
-    |expression op=(Increment|Decrement)
-    |<assoc=right>op=(Increment|Decrement) expression
-    |<assoc=right>op=(Not|Tilde|Minus) expression
-    |expression op=(Multiply|Divide|Mod) expression
-    |expression op=(Plus|Minus) expression
-    |expression op=(LeftShift|RightShift) expression
-    |expression op=(Less|LessEqual|Greater|GreaterEqual) expression
-    |expression op=(Equal|NotEqual) expression
-    |expression op=And expression
-    |expression op=Caret expression
-    |expression op=Or expression
-    |expression op=AndAnd expression
-    |expression op=OrOr expression
-    |<assoc=right>expression '?' expression ':' expression
-    |<assoc=right> expression op=Assign expression
-    |primary
+    :New type ('('')')? #newVarExpr
+    |New type ('['expression?']')+ constArray? #newArrayExpr
+    |expression '('(expression (',' expression)*)? ')' #funcExpr
+    |expression '[' expression ']' #arrayExpr
+    |expression op=Fullstop Identifier #memberExpr
+    |expression op=(Increment|Decrement) #sufExpr
+    |<assoc=right>op=(Increment|Decrement) expression #preExpr
+    |<assoc=right>op=(Not|Tilde|Minus) expression #unaryExpr
+    |expression op=(Multiply|Divide|Mod) expression #binaryExpr
+    |expression op=(Plus|Minus) expression #binaryExpr
+    |expression op=(LeftShift|RightShift) expression #binaryExpr
+    |expression op=(Less|LessEqual|Greater|GreaterEqual) expression #binaryExpr
+    |expression op=(Equal|NotEqual) expression #binaryExpr
+    |expression op=And expression #binaryExpr
+    |expression op=Caret expression #binaryExpr
+    |expression op=Or expression #binaryExpr
+    |expression op=AndAnd expression #binaryExpr
+    |expression op=OrOr expression #binaryExpr
+    |<assoc=right>expression '?' expression ':' expression #conditionExpr
+    |<assoc=right> expression op=Assign expression #assignExpr
+    |'(' expression ')' #parenExpr
+    |primary #basicExpr
     ;
 
 primary
-    :Identifier
-    |Const
+    :fstring
+    |Identifier
+    |const
     |This
     ;
 
-ConstArray :'{'Const (',' Const)* '}'|EmptyArrayUnit;
+BasicFString:'f"'(FormatChar|Escape|'$$')*'"';
+fstring:(FStringFront expression (FStringMid expression)* FStringEnd)|BasicFString;
+FStringFront: 'f"'(FormatChar|Escape|'$$')*'$';
+FStringMid:'$'(FormatChar|Escape|'$$')*'$';
+FStringEnd:'$'(FormatChar|Escape|'$$')*'"';
 
-Const:True|False|DecimalInteger|ConstString|Null|ConstArray;
 
+const:True|False|DecimalInteger|ConstString|Null|constArray;
+constArray:('{' const (','  const )* '}')|EmptyArrayUnit;//要设置成parser，否则不能忽略空白
 ConstString:'"' (VisibleChar|Escape)* '"';
 
 Void : 'void';
@@ -141,22 +150,13 @@ DecimalInteger
     |'0'
     ;
 
-fragment VisibleChar: [\u0020-\u007e];//所有可示字符
+fragment VisibleChar: [\u0020-\u0021\u0023-\u005b\u005d-\u007e];//所有可示字符,除去" \
+fragment FormatChar: [\u0020-\u0021\u0023\u0025-\u005b\u005d-\u007e];//除去$ " \的可示字符
 fragment Escape: '\\n'|'\\"'|'\\\\';//转义字符
-fragment EmptyArrayUnit: '{''}';
+EmptyArrayUnit: '{''}';
 
-Whitespace
-    :   [ \t\n\r]+
-        -> skip
-    ;
+Whitespace: [ \t\n\r]+ -> skip;
 
+BlockComment: '/*' .*? '*/'-> skip;
 
-BlockComment
-    :   '/*' .*? '*/'
-        -> skip
-    ;
-
-LineComment
-    :   '//' ~[\r\n]*
-        -> skip
-    ;
+LineComment: '//' ~[\r\n]* -> skip;
