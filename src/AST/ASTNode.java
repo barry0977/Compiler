@@ -1,10 +1,11 @@
 package AST;
 
+import Util.Position;
 import org.antlr.runtime.tree.TreeWizard;
 
 abstract public class ASTNode {
-    public position pos;
-    public ASTnode(position pos){
+    public Position pos;
+    public ASTNode(Position pos){
         this.pos = pos;
     }
 
