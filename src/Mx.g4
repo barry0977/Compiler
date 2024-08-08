@@ -81,7 +81,7 @@ FStringEnd:'$'(FormatChar|Escape|'$$')*'"';
 
 
 const:True|False|DecimalInteger|ConstString|Null|constArray;
-constArray:('{' const (','  const )* '}')|EmptyArrayUnit;//要设置成parser，否则不能忽略空白
+constArray:('{' const (','  const )* '}')|emptyArrayUnit;//要设置成parser，否则不能忽略空白
 ConstString:'"' (VisibleChar|Escape)* '"';
 
 Void : 'void';
@@ -154,7 +154,7 @@ DecimalInteger
 fragment VisibleChar: [\u0020-\u0021\u0023-\u005b\u005d-\u007e];//所有可示字符,除去" \
 fragment FormatChar: [\u0020-\u0021\u0023\u0025-\u005b\u005d-\u007e];//除去$ " \的可示字符
 fragment Escape: '\\n'|'\\"'|'\\\\';//转义字符
-EmptyArrayUnit: '{''}';
+emptyArrayUnit: '{''}';
 
 Whitespace: [ \t\n\r]+ -> skip;
 
