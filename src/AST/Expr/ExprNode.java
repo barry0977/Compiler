@@ -6,7 +6,8 @@ import Util.Position;
 import java.lang.reflect.Type;
 
 public abstract class ExprNode extends ASTNode {
-    Type type;
+    public Type type;
+    public boolean isLeftValue;
     public ExprNode(Position pos) {
         super(pos);
     }
