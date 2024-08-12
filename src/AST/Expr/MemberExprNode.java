@@ -9,11 +9,8 @@ public class MemberExprNode extends ExprNode {
     public String member;
     public Type membertype;
 
-    public MemberExprNode(ExprNode obj, String member, Type membertype, Position pos) {
+    public MemberExprNode( Position pos) {
         super(pos);
-        this.obj = obj;
-        this.member = member;
-        this.membertype = membertype;
     }
 
     @Override

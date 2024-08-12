@@ -1,12 +1,12 @@
-package AST.Expr;
+package AST.Expr.BasicExpr;
 
 import AST.ASTVisitor;
 import Util.Position;
 
-public class ParenExprNode extends ExprNode {
-    public ExprNode expr;
+public class IdentifierNode extends BasicExprNode{
+    public String name;
 
-    public ParenExprNode(Position pos) {
+    public IdentifierNode(Position pos){
         super(pos);
     }
 

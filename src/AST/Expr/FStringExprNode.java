@@ -15,6 +15,12 @@ public class FStringExprNode extends ExprNode {
         exprlist = new ArrayList<>();
     }
 
+    public String GetString(String str) {
+        String res=str.substring(2, str.length() - 1);
+        res.replace("\\\\","\\").replace("\\n","\n").replace("\\\"","\"");
+        return res;
+    }
+
     @Override
     public void accept(ASTVisitor visitor) {
         visitor.visit(this);

@@ -4,14 +4,14 @@ import AST.Def.ClassDefNode;
 import AST.Def.ConstructNode;
 import AST.Def.FuncDefNode;
 import AST.Def.VarDefNode;
-import AST.Expr.ExprNode;
-import AST.Expr.NewVarExprNode;
+import AST.Expr.*;
+import AST.Expr.BasicExpr.BasicExprNode;
+import AST.Expr.BasicExpr.IdentifierNode;
 import AST.ProgramNode;
 import AST.Stmt.*;
 import AST.Type.Type;
 import Parser.MxBaseVisitor;
 import Parser.MxParser;
-import Parser.MxLexer;
 import AST.ASTNode;
 import Util.Pair;
 import Util.Position;
@@ -188,38 +188,122 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
         NewVarExprNode newVarExprNode=new NewVarExprNode(new Position(ctx));
         newVarExprNode.type=new Type(ctx.type());
         newVarExprNode.isLeftValue=false;
+        return newVarExprNode;
+    }
+
+    @Override public ASTNode visitFuncExpr(MxParser.FuncExprContext ctx) {
+        FuncExprNode funcExprNode=new FuncExprNode(new Position(ctx));
+        funcExprNode.func=(ExprNode) visit(ctx.expression(0));
+        for(int i=1;i<ctx.expression().size();i++){
+            funcExprNode.args.add((ExprNode) visit(ctx.expression(i)));
+        }
+        return funcExprNode;
+    }
+
+    //数组取下标操作
+    @Override public ASTNode visitArrayExpr(MxParser.ArrayExprContext ctx) {
+        ArrayExprNode arrayExprNode=new ArrayExprNode(new Position(ctx));
+        arrayExprNode.array=(ExprNode) visit(ctx.expression(0));
+        arrayExprNode.index=(ExprNode) visit(ctx.expression(1));
+        return arrayExprNode;
+    }
+
+    @Override public ASTNode visitMemberExpr(MxParser.MemberExprContext ctx) {
+        MemberExprNode memberExprNode=new MemberExprNode(new Position(ctx));
+        memberExprNode.member=ctx.Identifier().getText();
+        memberExprNode.obj=(ExprNode) visit(ctx.expression());
+        return memberExprNode;
+    }
+
+    @Override public ASTNode visitBinaryExpr(MxParser.BinaryExprContext ctx) {
+        BinaryExprNode binaryExprNode=new BinaryExprNode(new Position(ctx));
+        binaryExprNode.lhs=(ExprNode) visit(ctx.expression(0));
+        binaryExprNode.rhs=(ExprNode) visit(ctx.expression(1));
+        binaryExprNode.opCode=ctx.op.getText();
+        return binaryExprNode;
+    }
+
+    @Override public ASTNode visitPreExpr(MxParser.PreExprContext ctx) {
+        PreExprNode preExprNode=new PreExprNode(new Position(ctx));
+        preExprNode.opCode=ctx.op.getText();
+        preExprNode.expr=(ExprNode) visit(ctx.expression());
+        return preExprNode;
+    }
+
+    @Override public ASTNode visitSufExpr(MxParser.SufExprContext ctx) {
+        SufExprNode sufExprNode=new SufExprNode(new Position(ctx));
+        sufExprNode.opCode=ctx.op.getText();
+        sufExprNode.expr=(ExprNode) visit(ctx.expression());
+        return sufExprNode;
+    }
+
+    @Override public ASTNode visitParenExpr(MxParser.ParenExprContext ctx) {
+        ParenExprNode parenExprNode=new ParenExprNode(new Position(ctx));
+        parenExprNode.expr=(ExprNode) visit(ctx.expression());
+        return parenExprNode;
+    }
+
+    @Override public ASTNode visitMemberfuncExpr(MxParser.MemberfuncExprContext ctx) {
+        MemberFuncExprNode memberFuncExprNode=new MemberFuncExprNode(new Position(ctx));
+        memberFuncExprNode.func=ctx.Identifier().getText();
+        memberFuncExprNode.obj=(ExprNode) visit(ctx.expression(0));
+        return memberFuncExprNode;
+    }
+
+    //还没处理好
+    @Override public ASTNode visitBasicExpr(MxParser.BasicExprContext ctx) {
+        return new BasicExprNode(new Position(ctx));
+    }
+
+    @Override public ASTNode visitUnaryExpr(MxParser.UnaryExprContext ctx){
+        UnaryExprNode unaryExprNode=new UnaryExprNode(new Position(ctx));
+        unaryExprNode.expr=(ExprNode) visit(ctx.expression());
+        unaryExprNode.opCode=ctx.op.getText();
+        return unaryExprNode;
+    }
+
+    @Override public ASTNode visitConditionExpr(MxParser.ConditionExprContext ctx) {
+        ConditionExprNode conditionExprNode=new ConditionExprNode(new Position(ctx));
+        conditionExprNode.cond_=(ExprNode) visit(ctx.expression(0));
+        conditionExprNode.then_=(ExprNode) visit(ctx.expression(1));
+        conditionExprNode.else_=(ExprNode) visit(ctx.expression(2));
+        return conditionExprNode;
+    }
+
+    @Override public ASTNode visitAssignExpr(MxParser.AssignExprContext ctx) {
+        AssignExprNode assignExprNode=new AssignExprNode(new Position(ctx));
+        assignExprNode.lhs=(ExprNode) visit(ctx.expression(0));
+        assignExprNode.rhs=(ExprNode) visit(ctx.expression(1));
+        return assignExprNode;
+    }
+
+    @Override public ASTNode visitNewArrayExpr(MxParser.NewArrayExprContext ctx) {
+        NewArrayExprNode newArrayExprNode=new NewArrayExprNode(new Position(ctx));
+        newArrayExprNode.type=new Type(ctx.type());
+        return newArrayExprNode;
 
     }
 
-    @Override public ASTNode visitFuncExpr(MxParser.FuncExprContext ctx) {  
+    @Override public ASTNode visitPrimary(MxParser.PrimaryContext ctx) {
+        if(ctx.Identifier()!=null){
+            IdentifierNode identifierNode=new IdentifierNode(new Position(ctx));
+            identifierNode.name=ctx.Identifier().getText();
+            return identifierNode;
+        }else if(ctx.This()!= null){
 
-    @Override public ASTNode visitArrayExpr(MxParser.ArrayExprContext ctx) {  
+        }else if(ctx.const_()!=null){
 
-    @Override public ASTNode visitMemberExpr(MxParser.MemberExprContext ctx) {  
+        }
+        return new ASTNode(new Position(ctx));
+    }
 
-    @Override public ASTNode visitBinaryExpr(MxParser.BinaryExprContext ctx) {  
+    @Override public ASTNode visitFstring(MxParser.FstringContext ctx) {
+        FStringExprNode fStringExprNode=new FStringExprNode(new Position(ctx));
+        if(ctx.BasicFString()!=null){//不含有表达式
+            fStringExprNode.stringlist
+        }
 
-    @Override public ASTNode visitPreExpr(MxParser.PreExprContext ctx) {  
-
-    @Override public ASTNode visitSufExpr(MxParser.SufExprContext ctx) {  
-
-    @Override public ASTNode visitParenExpr(MxParser.ParenExprContext ctx) {  
-
-    @Override public ASTNode visitMemberfuncExpr(MxParser.MemberfuncExprContext ctx) {  
-
-    @Override public ASTNode visitBasicExpr(MxParser.BasicExprContext ctx) {  
-
-    @Override public ASTNode visitUnaryExpr(MxParser.UnaryExprContext ctx) {  
-
-    @Override public ASTNode visitConditionExpr(MxParser.ConditionExprContext ctx) {  
-
-    @Override public ASTNode visitAssignExpr(MxParser.AssignExprContext ctx) {  
-
-    @Override public ASTNode visitNewArrayExpr(MxParser.NewArrayExprContext ctx) {  
-
-    @Override public ASTNode visitPrimary(MxParser.PrimaryContext ctx) {  
-
-    @Override public ASTNode visitFstring(MxParser.FstringContext ctx) {  
+    }
 
     @Override public ASTNode visitConst(MxParser.ConstContext ctx) {  
 

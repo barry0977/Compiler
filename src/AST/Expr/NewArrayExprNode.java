@@ -9,10 +9,9 @@ public class NewArrayExprNode extends ExprNode{
     public ArrayList<Integer> sizelist;
     public ArrayConstNode init;
 
-    public NewArrayExprNode(ArrayConstNode arr,Position pos){
+    public NewArrayExprNode(Position pos){
         super(pos);
         sizelist = new ArrayList<>();
-        init = arr;
     }
 
     @Override

@@ -8,9 +8,8 @@ public class FuncExprNode extends ExprNode{
     public ExprNode func;
     public ArrayList<ExprNode> args;
 
-    public FuncExprNode(ExprNode func, Position pos) {
+    public FuncExprNode(Position pos) {
         super(pos);
-        this.func = func;
         this.args = new ArrayList<>();
     }
 }

@@ -1,17 +1,15 @@
-package AST.Expr;
+package AST.Expr.BasicExpr;
 
 import AST.ASTVisitor;
 import AST.Type.Type;
 import Util.Position;
 
-public class MemberFuncExprNode extends ExprNode {
-    public ExprNode obj;
-    public String func;
-    public Type functype;
+public class IntConstNode extends BasicExprNode {
+    public int value;
 
-    public MemberFuncExprNode(Position pos) {
+    public IntConstNode(Position pos){
         super(pos);
-
+        type=new Type("int",0);
     }
 
     @Override
@@ -19,3 +17,4 @@ public class MemberFuncExprNode extends ExprNode {
         visitor.visit(this);
     }
 }
+

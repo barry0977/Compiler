@@ -4,14 +4,10 @@ import AST.ASTVisitor;
 import Util.Position;
 
 public class SufExprNode extends ExprNode {
-    public enum opType{
-        addi,subi
-    }
-
-    public opType opCode;
     public ExprNode expr;
+    public String opCode;
 
-    public SufExprNode(opType opCode, ExprNode expr, Position pos) {
+    public SufExprNode(Position pos) {
         super(pos);
         this.opCode = opCode;
         this.expr = expr;

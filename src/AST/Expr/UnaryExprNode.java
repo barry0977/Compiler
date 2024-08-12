@@ -4,16 +4,11 @@ import AST.ASTVisitor;
 import Util.Position;
 
 public class UnaryExprNode extends ExprNode {
-    public enum unaryOpType{
-        not,tilde,minus
-    }
-    public unaryOpType opCode;
     public ExprNode expr;
+    public String opCode;
 
-    public UnaryExprNode(unaryOpType opCode, ExprNode expr, Position pos){
+    public UnaryExprNode(Position pos){
         super(pos);
-        this.opCode = opCode;
-        this.expr = expr;
     }
 
     @Override

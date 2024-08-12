@@ -6,11 +6,8 @@ import Util.Position;
 public class ConditionExprNode extends ExprNode {
     public ExprNode cond_, then_, else_;
 
-    public ConditionExprNode (ExprNode cond, ExprNode then, ExprNode else_, Position pos) {
+    public ConditionExprNode (Position pos) {
         super(pos);
-        this.cond_ = cond;
-        this.then_ = then;
-        this.else_ = else_;
     }
 
     @Override
