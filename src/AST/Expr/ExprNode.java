@@ -9,6 +9,8 @@ public abstract class ExprNode extends ASTNode {
     public Type type;
     public boolean isLeftValue;//是否是左值
 
+
+
     public ExprNode(Position pos) {
         super(pos);
     }

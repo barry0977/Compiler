@@ -300,6 +300,18 @@ public interface MxListener extends ParseTreeListener {
 	 */
 	void exitPreExpr(MxParser.PreExprContext ctx);
 	/**
+	 * Enter a parse tree produced by the {@code fStringExpr}
+	 * labeled alternative in {@link MxParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void enterFStringExpr(MxParser.FStringExprContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code fStringExpr}
+	 * labeled alternative in {@link MxParser#expression}.
+	 * @param ctx the parse tree
+	 */
+	void exitFStringExpr(MxParser.FStringExprContext ctx);
+	/**
 	 * Enter a parse tree produced by the {@code sufExpr}
 	 * labeled alternative in {@link MxParser#expression}.
 	 * @param ctx the parse tree
@@ -435,4 +447,14 @@ public interface MxListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitConstArray(MxParser.ConstArrayContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link MxParser#emptyArrayUnit}.
+	 * @param ctx the parse tree
+	 */
+	void enterEmptyArrayUnit(MxParser.EmptyArrayUnitContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link MxParser#emptyArrayUnit}.
+	 * @param ctx the parse tree
+	 */
+	void exitEmptyArrayUnit(MxParser.EmptyArrayUnitContext ctx);
 }

@@ -63,12 +63,12 @@ expression
     |<assoc=right>expression '?' expression ':' expression #conditionExpr
     |<assoc=right> expression op=Assign expression #assignExpr
     |'(' expression ')' #parenExpr
+    |fstring #fStringExpr
     |primary #basicExpr
     ;
 
 primary
-    :fstring
-    |Identifier
+    :Identifier
     |const
     |This
     ;

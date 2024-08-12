@@ -183,6 +183,13 @@ public interface MxVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitPreExpr(MxParser.PreExprContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code fStringExpr}
+	 * labeled alternative in {@link MxParser#expression}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitFStringExpr(MxParser.FStringExprContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code sufExpr}
 	 * labeled alternative in {@link MxParser#expression}.
 	 * @param ctx the parse tree
@@ -262,4 +269,10 @@ public interface MxVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitConstArray(MxParser.ConstArrayContext ctx);
+	/**
+	 * Visit a parse tree produced by {@link MxParser#emptyArrayUnit}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitEmptyArrayUnit(MxParser.EmptyArrayUnitContext ctx);
 }

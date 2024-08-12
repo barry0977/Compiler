@@ -3,7 +3,6 @@ package AST.Stmt;
 import AST.Expr.ExprNode;
 import Util.Position;
 import AST.ASTVisitor;
-import org.antlr.runtime.tree.TreeWizard;
 
 public class IfStmtNode extends StmtNode {
     public ExprNode condition;
