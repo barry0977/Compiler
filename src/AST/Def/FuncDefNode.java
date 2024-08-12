@@ -11,13 +11,12 @@ import java.util.ArrayList;
 public class FuncDefNode extends ASTNode {
     public String funcname;
     public Type returntype;
-
+    public ParalistNode paraslist;
     public ArrayList<StmtNode> body;
 
-    public FuncDefNode(Position pos,Type returntype, ArrayList<StmtNode> body) {
+    public FuncDefNode(Position pos) {
         super(pos);
-        this.returntype = returntype;
-        this.body = body;
+        body = new ArrayList<>();
     }
 
     @Override

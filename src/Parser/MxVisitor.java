@@ -47,6 +47,12 @@ public interface MxVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitReturntype(MxParser.ReturntypeContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link MxParser#varDefUnit}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitVarDefUnit(MxParser.VarDefUnitContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link MxParser#varDef}.
 	 * @param ctx the parse tree
 	 * @return the visitor result

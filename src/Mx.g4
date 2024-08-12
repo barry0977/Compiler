@@ -19,7 +19,8 @@ type: typename ('['']')*;
 
 returntype: type|Void;
 
-varDef: type Identifier ('=' expression)? (',' Identifier ('=' expression)?)* ';';
+varDefUnit: Identifier ('=' expression)?;
+varDef: type varDefUnit (',' varDefUnit)* ';';
 funcDef: returntype Identifier '(' (type Identifier)? (',' type Identifier)*')'suite;
 construct: Identifier '(' ')'suite;
 classDef: Class Identifier '{'(varDef|funcDef|construct)*'}'';';

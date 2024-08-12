@@ -1,14 +1,15 @@
 package AST.Stmt;
 
 import AST.ASTVisitor;
-import AST.Expr.ExprNode;
+import AST.Def.VarDefNode;
 import Util.Position;
 
-public class WhileStmtNode extends StmtNode {
-    public ExprNode condition;
-    public StmtNode body;
+import java.util.ArrayList;
 
-    public WhileStmtNode(Position pos) {
+public class VardefStmtNode extends StmtNode {
+    public VarDefNode varDef;
+
+    public VardefStmtNode(Position pos) {
         super(pos);
     }
 

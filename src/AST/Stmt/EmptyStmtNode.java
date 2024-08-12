@@ -1,14 +1,10 @@
 package AST.Stmt;
 
 import AST.ASTVisitor;
-import AST.Expr.ExprNode;
 import Util.Position;
 
-public class WhileStmtNode extends StmtNode {
-    public ExprNode condition;
-    public StmtNode body;
-
-    public WhileStmtNode(Position pos) {
+public class EmptyStmtNode extends StmtNode {
+    public EmptyStmtNode(Position pos) {
         super(pos);
     }
 

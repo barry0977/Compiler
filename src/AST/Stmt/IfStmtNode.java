@@ -8,11 +8,8 @@ public class IfStmtNode extends StmtNode {
     public ExprNode condition;
     public StmtNode trueStmt,falseStmt;
 
-    public IfStmtNode(ExprNode condition, StmtNode trueStmt, StmtNode falseStmt, Position pos) {
+    public IfStmtNode(Position pos) {
         super(pos);
-        this.condition = condition;
-        this.trueStmt = trueStmt;
-        this.falseStmt = falseStmt;
     }
 
     @Override

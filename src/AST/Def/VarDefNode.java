@@ -5,17 +5,16 @@ import AST.ASTVisitor;
 import AST.Expr.ExprNode;
 import AST.Type.Type;
 import Util.Position;
+import java.util.ArrayList;
+import Util.Pair;
 
 public class VarDefNode extends ASTNode {
-    public String name;
-    public Type type;
-    public ExprNode value;
+    public Type vartype;
+    public ArrayList<Pair<String, ExprNode>> vars;
 
-    public VarDefNode(String name, Type type, ExprNode value, Position pos) {
+    public VarDefNode(Position pos) {
         super(pos);
-        this.name = name;
-        this.type = type;
-        this.value = value;
+        vars = new ArrayList<>();
     }
 
     @Override

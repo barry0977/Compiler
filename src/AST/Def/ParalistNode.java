@@ -2,19 +2,18 @@ package AST.Def;
 
 import AST.ASTNode;
 import AST.ASTVisitor;
-import AST.Stmt.StmtNode;
+import AST.Type.Type;
+import Util.Pair;
 import Util.Position;
 
 import java.util.ArrayList;
 
-//类的构造函数
-public class ConstructNode extends ASTNode {
-    public String name;
-    public ArrayList<StmtNode> stmts;
+public class ParalistNode extends ASTNode {
+    public ArrayList<Pair<Type,String>> Paralist;
 
-    public ConstructNode(Position pos) {
+    public ParalistNode(Position pos){
         super(pos);
-        stmts = new ArrayList<>();
+        Paralist = new ArrayList<>();
     }
 
     @Override

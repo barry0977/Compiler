@@ -1,13 +1,8 @@
 package AST;
 
-import AST.Def.ClassDefNode;
-import AST.Def.ConstructNode;
-import AST.Def.FuncDefNode;
-import AST.Def.VarDefNode;
+import AST.Def.*;
 import AST.Expr.*;
 import AST.Stmt.*;
-
-import java.util.concurrent.locks.Condition;
 
 public interface ASTVisitor {
     void visit(ProgramNode it);
@@ -15,6 +10,7 @@ public interface ASTVisitor {
     void visit(FuncDefNode it);
     void visit(VarDefNode it);
     void visit(ConstructNode it);
+    void visit(ParalistNode it);
 
     void visit(IfStmtNode it);
     void visit(WhileStmtNode it);
@@ -24,6 +20,8 @@ public interface ASTVisitor {
     void visit(PureExprStmtNode it);
     void visit(ReturnStmtNode it);
     void visit(BlockStmtNode it);
+    void visit(VardefStmtNode it);
+    void visit(EmptyStmtNode it);
 
     void visit(ArrayExprNode it);
     void visit(AssignExprNode it);
