@@ -3,16 +3,11 @@ package AST.Expr;
 import AST.ASTVisitor;
 import Util.Position;
 
-public class UnaryExprNode extends ExprNode {
-    public enum unaryOpType{
-        not,tilde,minus
-    }
-    public unaryOpType opCode;
+public class ParenExprNode extends ExprNode {
     public ExprNode expr;
 
-    public UnaryExprNode(unaryOpType opCode, ExprNode expr, Position pos){
+    public ParenExprNode(ExprNode expr,Position pos) {
         super(pos);
-        this.opCode = opCode;
         this.expr = expr;
     }
 

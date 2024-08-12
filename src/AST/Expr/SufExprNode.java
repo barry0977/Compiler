@@ -3,14 +3,15 @@ package AST.Expr;
 import AST.ASTVisitor;
 import Util.Position;
 
-public class UnaryExprNode extends ExprNode {
-    public enum unaryOpType{
-        not,tilde,minus
+public class SufExprNode extends ExprNode {
+    public enum opType{
+        addi,subi
     }
-    public unaryOpType opCode;
+
+    public opType opCode;
     public ExprNode expr;
 
-    public UnaryExprNode(unaryOpType opCode, ExprNode expr, Position pos){
+    public SufExprNode(opType opCode, ExprNode expr, Position pos) {
         super(pos);
         this.opCode = opCode;
         this.expr = expr;

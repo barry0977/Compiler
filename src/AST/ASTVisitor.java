@@ -24,5 +24,7 @@ public interface ASTVisitor {
     void visit(NewArrayExprNode it);
     void visit(NewVarExprNode it);
     void visit(UnaryExprNode it);
-
+    void visit(PreExprNode it);
+    void visit(SufExprNode it);
+    void visit(ParenExprNode it);
 }
