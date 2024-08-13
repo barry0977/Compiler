@@ -5,6 +5,7 @@ import AST.Def.ConstructNode;
 import AST.Def.FuncDefNode;
 import AST.Def.VarDefNode;
 import AST.Expr.*;
+import AST.Expr.BasicExpr.ArrayConstNode;
 import AST.Expr.BasicExpr.BasicExprNode;
 import AST.Expr.BasicExpr.IdentifierNode;
 import AST.ProgramNode;
@@ -230,6 +231,23 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
         return preExprNode;
     }
 
+    @Override public ASTNode visitFStringExpr(MxParser.FStringExprContext ctx) {
+        FStringExprNode fStringExprNode=new FStringExprNode(new Position(ctx));
+        if(ctx.fstring().BasicFString()!=null){//不含有表达式
+            fStringExprNode.stringlist.add(ctx.fstring().BasicFString().getText());
+        }else{//含有表达式
+            for(var expr:ctx.fstring().expression()){
+                fStringExprNode.exprlist.add((ExprNode) visit(expr));
+            }
+            fStringExprNode.stringlist.add(ctx.fstring().FStringFront().getText());
+            for(var mid:ctx.fstring().FStringMid()){
+                fStringExprNode.stringlist.add(mid.getText());
+            }
+            fStringExprNode.stringlist.add(ctx.fstring().FStringEnd().getText());
+        }
+        return fStringExprNode;
+    }
+
     @Override public ASTNode visitSufExpr(MxParser.SufExprContext ctx) {
         SufExprNode sufExprNode=new SufExprNode(new Position(ctx));
         sufExprNode.opCode=ctx.op.getText();
@@ -286,26 +304,68 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
 
     @Override public ASTNode visitPrimary(MxParser.PrimaryContext ctx) {
         if(ctx.Identifier()!=null){
-            IdentifierNode identifierNode=new IdentifierNode(new Position(ctx));
-            identifierNode.name=ctx.Identifier().getText();
-            return identifierNode;
+//            IdentifierNode identifierNode=new IdentifierNode(new Position(ctx));
+//            identifierNode.name=ctx.Identifier().getText();
+//            return identifierNode;
+            BasicExprNode basicExprNode=new BasicExprNode(new Position(ctx));
+            basicExprNode.isIdentifier=true;
+            basicExprNode.name=ctx.Identifier().getText();
+            return basicExprNode;
         }else if(ctx.This()!= null){
-
-        }else if(ctx.const_()!=null){
-
+            BasicExprNode basicExprNode=new BasicExprNode(new Position(ctx));
+            basicExprNode.isThis=true;
+            return basicExprNode;
+        }else{
+            return visit(ctx.const_());
         }
-        return new ASTNode(new Position(ctx));
     }
 
+    //这个好像和上面的FStringExpr重复了
     @Override public ASTNode visitFstring(MxParser.FstringContext ctx) {
         FStringExprNode fStringExprNode=new FStringExprNode(new Position(ctx));
         if(ctx.BasicFString()!=null){//不含有表达式
-            fStringExprNode.stringlist
+            fStringExprNode.stringlist.add(ctx.BasicFString().getText());
+        }else{//含有表达式
+            for(var expr:ctx.expression()){
+                fStringExprNode.exprlist.add((ExprNode) visit(expr));
+            }
+            fStringExprNode.stringlist.add(ctx.FStringFront().getText());
+            for(var mid:ctx.FStringMid()){
+                fStringExprNode.stringlist.add(mid.getText());
+            }
+            fStringExprNode.stringlist.add(ctx.FStringEnd().getText());
         }
-
+        return fStringExprNode;
     }
 
-    @Override public ASTNode visitConst(MxParser.ConstContext ctx) {  
+    @Override public ASTNode visitConst(MxParser.ConstContext ctx) {
+        BasicExprNode basicExprNode=new BasicExprNode(new Position(ctx));
+        if(ctx.True()!= null){
+            basicExprNode.isTrue=true;
+            return basicExprNode;
+        }else if(ctx.False()!= null){
+            basicExprNode.isFalse=true;
+            return basicExprNode;
+        }else if(ctx.Null()!= null){
+            basicExprNode.isNull=true;
+            return basicExprNode;
+        }else if(ctx.DecimalInteger()!= null){
+            basicExprNode.isInt=true;
+            return basicExprNode;
+        }else if(ctx.ConstString()!=null){
+            basicExprNode.isString=true;
+            return basicExprNode;
+        }else{//数组常量
+            return visit(ctx.constArray());
+        }
+    }
 
-    @Override public ASTNode visitConstArray(MxParser.ConstArrayContext ctx) {  
+    @Override public ASTNode visitConstArray(MxParser.ConstArrayContext ctx) {
+        ArrayConstNode arrayConstNode=new ArrayConstNode(new Position(ctx));
+        for(var cst:ctx.const_()){
+            arrayConstNode.elements.add((BasicExprNode) visit(cst));
+        }
+        return arrayConstNode;
+    }
+
 }

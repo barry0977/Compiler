@@ -5,8 +5,8 @@ import AST.Expr.ExprNode;
 import Util.Position;
 
 public class BasicExprNode extends ExprNode {
-    public boolean isThis = false,isTrue=false,isFalse=false;
-    public boolean isInt=false,isString=false,isClass=false,isIdentifier=false;
+    public boolean isThis = false,isTrue=false,isFalse=false,isNull=false;
+    public boolean isInt=false,isString=false,isIdentifier=false;
     public String name;
 
     public BasicExprNode(Position pos) {

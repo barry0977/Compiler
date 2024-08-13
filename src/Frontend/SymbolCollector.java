@@ -1,4 +1,7 @@
 package Frontend;
 
-public class SymbolCollector {
+import AST.ASTVisitor;
+
+public class SymbolCollector implements ASTVisitor {
+
 }
