@@ -1,9 +1,6 @@
 package Frontend;
 
-import AST.Def.ClassDefNode;
-import AST.Def.ConstructNode;
-import AST.Def.FuncDefNode;
-import AST.Def.VarDefNode;
+import AST.Def.*;
 import AST.Expr.*;
 import AST.Expr.BasicExpr.ArrayConstNode;
 import AST.Expr.BasicExpr.BasicExprNode;
@@ -22,18 +19,21 @@ import Util.error.syntaxError;
 public class ASTBuilder extends MxBaseVisitor<ASTNode> {
     @Override public ASTNode visitProgram(MxParser.ProgramContext ctx) {
         ProgramNode program = new ProgramNode(new Position(ctx));
-        for(var vardef:ctx.varDef()){
-            VarDefNode varDef = (VarDefNode) visit(vardef);
-            program.varNodes.add(varDef);
+        for(var nodes:ctx.children){
+            program.defNodes.add((DefNode) visit(nodes));
         }
-        for(var funcdef:ctx.funcDef()){
-            FuncDefNode funcDef = (FuncDefNode) visit(funcdef);
-            program.funcNodes.add(funcDef);
-        }
-        for(var classdef:ctx.classDef()){
-            ClassDefNode classDef = (ClassDefNode) visit(classdef);
-            program.classNodes.add(classDef);
-        }
+//        for(var vardef:ctx.varDef()){
+//            VarDefNode varDef = (VarDefNode) visit(vardef);
+//            program.varNodes.add(varDef);
+//        }
+//        for(var funcdef:ctx.funcDef()){
+//            FuncDefNode funcDef = (FuncDefNode) visit(funcdef);
+//            program.funcNodes.add(funcDef);
+//        }
+//        for(var classdef:ctx.classDef()){
+//            ClassDefNode classDef = (ClassDefNode) visit(classdef);
+//            program.classNodes.add(classDef);
+//        }
         return program;
     }
 
@@ -71,7 +71,7 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
             Type type=new Type(ctx.returntype().type());
             funcDefNode.returntype=type;
         }
-        funcDefNode.funcname=ctx.Identifier(0).getText();
+        funcDefNode.name=ctx.Identifier(0).getText();
         for(int i=1;i<ctx.Identifier().size();i++){//获取参数列表
             funcDefNode.paraslist.Paralist.add(new Pair<>(new Type(ctx.type(i-1)),ctx.Identifier(i).getText()));
         }

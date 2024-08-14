@@ -21,7 +21,7 @@ public class FuncDecl {
     }
 
     public FuncDecl(FuncDefNode funcdef){
-        this.name=funcdef.funcname;
+        this.name=funcdef.name;
         this.returnType=funcdef.returntype;
         this.params=new HashMap<>();
         for(var x:funcdef.paraslist.Paralist){

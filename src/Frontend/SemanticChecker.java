@@ -33,39 +33,85 @@ public class SemanticChecker implements ASTVisitor {
             throw new semanticError("Main Function parameters are not allowed",it.pos);
         }
 
-        for(var v:it.varNodes){
-            v.accept(this);
+        for(var def:it.defNodes){
+            def.accept(this);
         }
-        for(var func:it.funcNodes){
-            func.accept(this);
-        }
-        for(var clas:it.classNodes){
-            clas.accept(this);
-        }
+//        for(var v:it.varNodes){
+//            v.accept(this);
+//        }
+//        for(var func:it.funcNodes){
+//            func.accept(this);
+//        }
+//        for(var clas:it.classNodes){
+//            clas.accept(this);
+//        }
     }
 
     public void visit(ClassDefNode it){
+        curScope=it.scope;
+        for(var x:it.vars){
+            x.accept(this);
+        }
+        for(var func:it.funcs){
+            func.accept(this);
+        }
 
+        if(it.construct!=null){
+            if(!it.construct.name.equals(it.name)){//判断构造函数名称是否正确
+                throw new semanticError("Construct name mismatch",it.pos);
+            }
+            it.construct.accept(this);
+        }
+        curScope=curScope.parent;
     }
 
     public void visit(FuncDefNode it){
+        curScope=it.scope;
+        for(var stmt:it.body){
+            if(stmt instanceof EmptyStmtNode) {//如果是空语句，就不访问
+                stmt.accept(this);
+            }
+        }
 
+        if(((funcScope)curScope).)
+        curScope=curScope.parent;
     }
 
     public void visit(VarDefNode it){
-
+        if(curScope==gScope){
+            for(var x:it.vars){
+                gScope.addVar(x.first,x.second.type,it.pos);
+            }
+        }
     }
 
     public void visit(ConstructNode it){
-
+        curScope=new funcScope(curScope);
     }
 
     public void visit(ParalistNode it){
-
+        for(var para:it.Paralist){
+            if(para.first.isClass){//如果参数类型是类，则从globalScope中去找
+                if(gScope.getClass(para.second)==null){
+                    throw new semanticError("type "+para.second+" cannot be found",it.pos);
+                }
+            }
+        }
     }
 
     public void visit(IfStmtNode it){
 
+
+        if(it.trueStmt!=null){
+            curScope=new Scope(curScope);
+            it.trueStmt.accept(this);
+            curScope=curScope.parent;
+        }
+        if(it.falseStmt!=null){
+            curScope=new Scope(curScope);
+            it.falseStmt.accept(this);
+            curScope=curScope.parent;
+        }
     }
 
     public void visit(WhileStmtNode it){

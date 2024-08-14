@@ -18,13 +18,13 @@ public class classScope extends Scope {
     }
 
     public void addFunc(FuncDefNode func){
-        if(funcs.containsKey(func.funcname)){
-            throw new semanticError("Duplicate function name: "+func.funcname,func.pos);
+        if(funcs.containsKey(func.name)){
+            throw new semanticError("Duplicate function name: "+func.name,func.pos);
         }
-        if(vars.containsKey(func.funcname)){
-            throw new semanticError("Duplicate function name with variable: "+func.funcname,func.pos);
+        if(vars.containsKey(func.name)){
+            throw new semanticError("Duplicate function name with variable: "+func.name,func.pos);
         }
-        funcs.put(func.funcname,new FuncDecl(func));
+        funcs.put(func.name,new FuncDecl(func));
     }
 
     @Override

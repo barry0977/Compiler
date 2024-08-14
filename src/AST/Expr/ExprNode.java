@@ -22,6 +22,5 @@ public abstract class ExprNode extends ASTNode {
     }
 
     @Override
-    public void accept(ASTVisitor visitor) {
-    }
+    abstract public void accept(ASTVisitor visitor);
 }

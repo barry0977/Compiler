@@ -21,15 +21,13 @@ public class SymbolCollector implements ASTVisitor {
 
     @Override
     public void visit(ProgramNode node){
-        for(var func:node.funcNodes){
-            gScope.addFunc(func);
-            visit(func);
+        for(var def:node.defNodes){
+            def.accept(this);
         }
-        for(var clas:node.classNodes){
-            gScope.addClass(clas);
-            visit(clas);
-        }
-        //全局变量和局部变量不支持前向引用
+//        for(var clas:node.classNodes){
+//            gScope.addClass(clas);
+//            visit(clas);
+//        }
 //        for(var x:node.varNodes){
 //            for(var v:x.vars) {
 //                gScope.vars.put(v.first,x.vartype);
@@ -40,12 +38,14 @@ public class SymbolCollector implements ASTVisitor {
 
     @Override
     public void visit(ClassDefNode it){
+        gScope.addClass(it);
         it.scope=new classScope(curScope);
         curScope=it.scope;
         for(var func:it.funcs){
             it.scope.addFunc(func);
             visit(func);
         }
+        //类中变量支持前向引用
         for(var x:it.vars){
             for(var v:x.vars) {
                 it.scope.addVar(v.first,v.second.type,x.pos);
@@ -56,6 +56,9 @@ public class SymbolCollector implements ASTVisitor {
 
     @Override
     public void visit(FuncDefNode it){
+        if(curScope==gScope){
+            gScope.addFunc(it);
+        }
         it.scope=new funcScope(curScope);
         curScope=it.scope;
         for(var args:it.paraslist.Paralist){
@@ -63,6 +66,7 @@ public class SymbolCollector implements ASTVisitor {
         }
         curScope=it.scope.getParent();
     }
+    //全局变量和局部变量不支持前向引用，不用加进去
     public void visit(VarDefNode it) { }
     public void visit(ConstructNode it) { }
     public void visit(ParalistNode it) { }

@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import Util.Pair;
 
 public class VarDefNode extends ASTNode {
-    String name;
     public Type vartype;
     public ArrayList<Pair<String, ExprNode>> vars;
 

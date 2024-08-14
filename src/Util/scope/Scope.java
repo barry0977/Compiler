@@ -12,7 +12,7 @@ public class Scope {
     }
     public HashMap<String, Type> vars;//只存了变量
     public scopeType stype;//
-    private Scope parent;
+    public Scope parent;
 
     public Scope(Scope parent) {
         this.parent = parent;

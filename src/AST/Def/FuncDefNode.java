@@ -10,8 +10,7 @@ import Util.scope.funcScope;
 
 import java.util.ArrayList;
 
-public class FuncDefNode extends ASTNode {
-    public String funcname;
+public class FuncDefNode extends DefNode {
     public Type returntype;
     public ParalistNode paraslist;
     public ArrayList<StmtNode> body;

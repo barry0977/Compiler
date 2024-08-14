@@ -31,6 +31,7 @@ public class globalScope extends Scope{
         classDecl.funcs.put("parseInt",new FuncDecl("parseInt",new Type("int",0),"","",false));
         classDecl.funcs.put("ord",new FuncDecl("ord",new Type("int",0),"int","",true));
         classDecls.put("string",classDecl);
+        this.parent=null;
     }
 
     public FuncDecl getFunc(String name){
@@ -39,6 +40,22 @@ public class globalScope extends Scope{
        }else{
            return null;
        }
+    }
+
+    public ClassDecl getClass(String name){
+        if(classDecls.containsKey(name)){
+            return classDecls.get(name);
+        }else{
+            return null;
+        }
+    }
+
+    public Type getVar(String name){
+        if(vars.containsKey(name)){
+            return vars.get(name);
+        }else{
+            return null;
+        }
     }
 
     @Override
@@ -53,13 +70,13 @@ public class globalScope extends Scope{
     }
 
     public void addFunc(FuncDefNode func){
-        if(funcDecls.containsKey(func.funcname)){
-            throw new semanticError("Duplicate function name: "+func.funcname,func.pos);
+        if(funcDecls.containsKey(func.name)){
+            throw new semanticError("Duplicate function name: "+func.name,func.pos);
         }
-        if(vars.containsKey(func.funcname)){
-            throw new semanticError("Duplicate function name with function: "+func.funcname,func.pos);
+        if(vars.containsKey(func.name)){
+            throw new semanticError("Duplicate function name with function: "+func.name,func.pos);
         }
-        funcDecls.put(func.funcname,new FuncDecl(func));
+        funcDecls.put(func.name,new FuncDecl(func));
     }
 
     public void addClass(ClassDefNode clas){
