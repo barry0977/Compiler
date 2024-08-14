@@ -41,10 +41,4 @@ public interface ASTVisitor {
     void visit(FStringExprNode it);
 
     void visit(ArrayConstNode it);
-    void visit(IntConstNode it);
-    void visit(StringConstNode it);
-    void visit(BoolConstNode it);
-    void visit(NullNode it);
-    void visit(ThisNode it);
-    void visit(IdentifierNode it);
 }

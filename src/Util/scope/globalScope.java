@@ -10,7 +10,8 @@ public class globalScope extends Scope{
     public HashMap<String, ClassDecl>classDecls;
     public HashMap<String, FuncDecl>funcDecls;
 
-    public globalScope(){
+    public globalScope(Scope parent){
+        super(null);
         classDecls = new HashMap<>();
         funcDecls = new HashMap<>();
         funcDecls.put("print",new FuncDecl("print",new Type("void",0),"string",true));

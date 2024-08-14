@@ -4,6 +4,6 @@ import AST.ASTVisitor;
 import Util.scope.globalScope;
 
 
-public class SemanticChecker implements ASTVisitor {
+public class SemanticChecker {
     globalScope gScope;
 }
