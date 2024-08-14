@@ -1,33 +1,31 @@
 package Util.Decl;
 
 import AST.Def.FuncDefNode;
-import AST.Def.ParalistNode;
 import AST.Type.Type;
-
-import java.util.ArrayList;
+import java.util.HashMap;
 
 public class FuncDecl {
     public String name;
     public Type returnType;
-    public ArrayList<Type> paramTypes;
+    public HashMap<String, Type> params;
 
-    public FuncDecl(String name, Type returnType,String type,boolean have) {
+
+    public FuncDecl(String name, Type returnType,String type1,String type2,boolean have) {
         this.name = name;
         this.returnType = returnType;
-        this.paramTypes = new ArrayList<>();
+        this.params = new HashMap<>();
         if (have) {
-            this.paramTypes.add(new Type(type,0));
+            this.params.put("",new Type("type1",0));
+            this.params.put("",new Type("type2",0));
         }
     }
 
     public FuncDecl(FuncDefNode funcdef){
         this.name=funcdef.funcname;
         this.returnType=funcdef.returntype;
-        this.paramTypes=new ArrayList<>();
+        this.params=new HashMap<>();
         for(var x:funcdef.paraslist.Paralist){
-            this.paramTypes.add(x.first);
+            this.params.put(x.second,x.first);
         }
     }
-
-
 }

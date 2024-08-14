@@ -7,34 +7,62 @@ import AST.Expr.BasicExpr.ArrayConstNode;
 import AST.Expr.BasicExpr.BasicExprNode;
 import AST.ProgramNode;
 import AST.Stmt.*;
-import Util.Decl.ClassDecl;
-import Util.Decl.FuncDecl;
-import Util.scope.globalScope;
+import Util.Decl.*;
+import Util.scope.*;
 
 public class SymbolCollector implements ASTVisitor {
     private globalScope gScope;
+    public Scope curScope;
 
     public SymbolCollector(globalScope gScope) {
         this.gScope = gScope;
+        this.curScope=this.gScope;
     }
 
     @Override
     public void visit(ProgramNode node){
         for(var func:node.funcNodes){
-            gScope.funcDecls.put(func.funcname,new FuncDecl(func));
+            gScope.addFunc(func);
+            visit(func);
         }
         for(var clas:node.classNodes){
-            gScope.classDecls.put(clas.name,new ClassDecl(clas));
+            gScope.addClass(clas);
+            visit(clas);
         }
-        for(var x:node.varNodes){
-            for(var v:x.vars) {
-                gScope.vars.put(v.first,x.vartype);
-            }
-        }
+        //全局变量和局部变量不支持前向引用
+//        for(var x:node.varNodes){
+//            for(var v:x.vars) {
+//                gScope.vars.put(v.first,x.vartype);
+//            }
+//            visit(x);
+//        }
     }
 
-    public void visit(ClassDefNode it){}
-    public void visit(FuncDefNode it){}
+    @Override
+    public void visit(ClassDefNode it){
+        it.scope=new classScope(curScope);
+        curScope=it.scope;
+        for(var func:it.funcs){
+            it.scope.addFunc(func);
+            visit(func);
+        }
+        for(var x:it.vars){
+            for(var v:x.vars) {
+                it.scope.addVar(v.first,v.second.type,x.pos);
+            }
+        }
+        curScope=it.scope.getParent();
+    }
+
+    @Override
+    public void visit(FuncDefNode it){
+        it.scope=new funcScope(curScope);
+        curScope=it.scope;
+        for(var args:it.paraslist.Paralist){
+            it.scope.addVar(args.second,args.first,it.pos);
+        }
+        curScope=it.scope.getParent();
+    }
     public void visit(VarDefNode it) { }
     public void visit(ConstructNode it) { }
     public void visit(ParalistNode it) { }

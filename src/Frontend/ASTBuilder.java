@@ -17,6 +17,7 @@ import AST.ASTNode;
 import Util.Pair;
 import Util.Position;
 import Util.error.Error;
+import Util.error.syntaxError;
 
 public class ASTBuilder extends MxBaseVisitor<ASTNode> {
     @Override public ASTNode visitProgram(MxParser.ProgramContext ctx) {
@@ -97,7 +98,7 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
         ClassDefNode classDefNode=new ClassDefNode(new Position(ctx));
         classDefNode.name=ctx.Identifier().getText();
         if(ctx.construct().size()>1){
-            throw new Error("More than one construct found");
+            throw new syntaxError("More than one construct found",new Position(ctx));
         }else if(ctx.construct().size()==1){
             classDefNode.construct=(ConstructNode) visit(ctx.construct().get(0));
         }else{

@@ -13,7 +13,8 @@ public class Type {
         }else if(type.equals("bool")){
             this.isBool = true;
         }else if(type.equals("string")){
-            this.isString = true;
+            this.isClass=true;
+            this.typeName=type;
         }else if(type.equals("void")){
             this.isVoid = true;
         }else if(type.equals("null")){
@@ -44,7 +45,15 @@ public class Type {
             this.isClass = true;
             this.typeName = type;
         }
-
         this.dim=dim;
+    }
+
+    public boolean equals(Type t){
+        if(this.typeName.equals(t.typeName)){
+            if(this.dim==t.dim){
+                return true;
+            }
+        }
+        return false;
     }
 }
