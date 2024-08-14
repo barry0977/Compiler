@@ -6,8 +6,8 @@ import Util.Position;
 import Util.scope.loopScope;
 
 public class WhileStmtNode extends StmtNode {
-    public ExprNode condition;
-    public StmtNode body;
+    public ExprNode condition=null;
+    public StmtNode body=null;
     public loopScope scope;
 
     public WhileStmtNode(Position pos) {

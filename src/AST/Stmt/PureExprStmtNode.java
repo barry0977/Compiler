@@ -5,7 +5,7 @@ import AST.Expr.ExprNode;
 import Util.Position;
 
 public class PureExprStmtNode extends StmtNode {
-    public ExprNode expr;
+    public ExprNode expr=null;
 
     public PureExprStmtNode(Position pos) {
         super(pos);

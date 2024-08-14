@@ -7,7 +7,7 @@ import Util.Position;
 import java.util.ArrayList;
 
 public class VardefStmtNode extends StmtNode {
-    public VarDefNode varDef;
+    public VarDefNode varDef=null;
 
     public VardefStmtNode(Position pos) {
         super(pos);

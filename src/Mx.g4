@@ -22,7 +22,7 @@ returntype: type|Void;
 varDefUnit: Identifier ('=' expression)?;
 varDef: type varDefUnit (',' varDefUnit)* ';';
 funcDef: returntype Identifier '(' (type Identifier)? (',' type Identifier)*')'suite;
-construct: Identifier '(' ')'suite;
+construct: Identifier '(' ')' suite;
 classDef: Class Identifier '{'(varDef|funcDef|construct)*'}'';';
 
 statement

@@ -63,6 +63,7 @@ public class SymbolCollector implements ASTVisitor {
         curScope=it.scope;
         for(var args:it.paraslist.Paralist){
             it.scope.addVar(args.second,args.first,it.pos);
+            it.scope.params.put(args.second,args.first);
         }
         curScope=it.scope.getParent();
     }
