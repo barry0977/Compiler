@@ -367,5 +367,4 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
         }
         return arrayConstNode;
     }
-
 }

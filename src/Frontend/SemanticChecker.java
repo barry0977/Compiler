@@ -1,4 +1,9 @@
 package Frontend;
 
-public class SemanticChecker {
+import AST.ASTVisitor;
+import Util.scope.globalScope;
+
+
+public class SemanticChecker implements ASTVisitor {
+    globalScope gScope;
 }
