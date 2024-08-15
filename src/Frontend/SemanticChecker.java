@@ -556,6 +556,7 @@ public class SemanticChecker implements ASTVisitor {
         }
         for(var expr:it.exprlist){
             if(!(expr.type.isInt||expr.type.isBool||expr.type.isString)){
+                System.out.println("Type Mismatch");
                 throw new semanticError("fstring expr type wrong",it.pos);
             }
         }
