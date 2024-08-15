@@ -349,7 +349,7 @@ public class SemanticChecker implements ASTVisitor {
         if(!it.then_.type.equals(it.else_.type)){
             throw new semanticError("ConditionExpr type mismatch",it.pos);
         }
-        it.type=new exprType(it.cond_.type);
+        it.type=new exprType(it.then_.type);
         it.isLeftValue=false;
     }
 
