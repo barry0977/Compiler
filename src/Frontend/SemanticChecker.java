@@ -97,11 +97,8 @@ public class SemanticChecker implements ASTVisitor {
     public void visit(ConstructNode it){
         curScope=new funcScope(curScope,new Type("void",0));
         for(var stmt:it.stmts){
-            if(stmt instanceof EmptyStmtNode){
+            if(!(stmt instanceof EmptyStmtNode)){
                 stmt.accept(this);
-            }
-            if(stmt instanceof ReturnStmtNode){//构造函数中不能有return
-                throw new semanticError("Return statement should not be in Construct",it.pos);
             }
         }
         curScope=curScope.parent;
@@ -436,7 +433,6 @@ public class SemanticChecker implements ASTVisitor {
         //如果有初始值
         if(it.init!=null){
             if(it.init.type.isNull){//如果初始值为null
-                System.err.println("isnull");
                 if(it.type.dim<it.init.type.dim){
                     throw new semanticError("array dim out of range",it.pos);
                 }else{
@@ -444,7 +440,6 @@ public class SemanticChecker implements ASTVisitor {
                     it.isLeftValue=false;
                 }
             }else{//需要判断
-                System.err.println("not null");
                 if(!it.type.equals(it.init.type)){
                     throw new semanticError("array type mismatch",it.pos);
                 }else{
@@ -534,6 +529,7 @@ public class SemanticChecker implements ASTVisitor {
         }
         if(it.elements.isEmpty()){//{ }
             it.type=new exprType("null",0);
+            return;
         }
         exprType firsttype=it.elements.get(0).type;
         if(firsttype.isFunc){
