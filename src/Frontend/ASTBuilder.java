@@ -151,11 +151,11 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
         if(ctx.initStmt != null){
             forStmtNode.initStmt=(StmtNode) visit(ctx.initStmt);
         }
-        if(ctx.expression(0)!=null){
-            forStmtNode.condition=(ExprNode) visit(ctx.expression(0));
+        if(ctx.cond_!=null){
+            forStmtNode.condition=(ExprNode) visit(ctx.cond_);
         }
-        if(ctx.expression(1)!=null){
-            forStmtNode.nextstep=(ExprNode) visit(ctx.expression(1));
+        if(ctx.next_!=null){
+            forStmtNode.nextstep=(ExprNode) visit(ctx.next_);
         }
         forStmtNode.body=(StmtNode) visit(ctx.statement(1));
         return forStmtNode;

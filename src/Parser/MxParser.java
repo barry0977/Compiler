@@ -945,6 +945,8 @@ public class MxParser extends Parser {
 	@SuppressWarnings("CheckReturnValue")
 	public static class ForStmtContext extends StatementContext {
 		public StatementContext initStmt;
+		public ExpressionContext cond_;
+		public ExpressionContext next_;
 		public TerminalNode For() { return getToken(MxParser.For, 0); }
 		public TerminalNode LeftParen() { return getToken(MxParser.LeftParen, 0); }
 		public TerminalNode Semi() { return getToken(MxParser.Semi, 0); }
@@ -1258,7 +1260,7 @@ public class MxParser extends Parser {
 				if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 865116708317230118L) != 0)) {
 					{
 					setState(146);
-					expression(0);
+					((ForStmtContext)_localctx).cond_ = expression(0);
 					}
 				}
 
@@ -1270,7 +1272,7 @@ public class MxParser extends Parser {
 				if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 865116708317230118L) != 0)) {
 					{
 					setState(150);
-					expression(0);
+					((ForStmtContext)_localctx).next_ = expression(0);
 					}
 				}
 

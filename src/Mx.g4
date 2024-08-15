@@ -31,7 +31,7 @@ statement
     | If '(' expression ')' trueStmt=statement
         (Else falseStmt=statement)?                         #ifStmt
     | While '(' expression ')' statement                    #whileStmt
-    | For '('initStmt=statement expression? ';' expression? ')'
+    | For '('initStmt=statement cond_=expression? ';' next_=expression? ')'
          statement                                          #forStmt
     | Break ';'                                             #breakStmt
     | Continue ';'                                          #continueStmt
