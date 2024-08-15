@@ -142,7 +142,6 @@ public class SemanticChecker implements ASTVisitor {
     }
 
     public void visit(WhileStmtNode it){
-        curScope=new loopScope(curScope);
         if(it.condition!=null){
             it.condition.accept(this);
             if(!it.condition.type.equals(new Type("bool",0))){
@@ -367,9 +366,15 @@ public class SemanticChecker implements ASTVisitor {
         if(!it.func.type.isFunc){//调用的不是函数
             throw new semanticError("Func operation not function",it.pos);
         }
-        FuncDecl func=curScope.getFunc(it.func.type.funcinfo.name,true);//从scope中去找函数，找不到就往上一层
+        FuncDecl func=null;
+        if(it.func instanceof BasicExprNode){//如果是普通函数，则去scope中找
+            func=curScope.getFunc(it.func.type.funcinfo.name,true);
+        }else if(it.func instanceof MemberExprNode){//如果是成员函数，则之前MemberExpr已经确定
+            func=it.func.type.funcinfo;
+        }
+//        FuncDecl func=curScope.getFunc(it.func.type.funcinfo.name,true);//从scope中去找函数，找不到就往上一层
         if(func==null){
-            throw new semanticError("Func does not exist",it.pos);
+            throw new semanticError("Func does not exist: "+it.func.type.funcinfo.name,it.pos);
         }
         if(func.params.size()!=it.args.size()){
             throw new semanticError("Func params number mismatch",it.pos);
@@ -386,7 +391,7 @@ public class SemanticChecker implements ASTVisitor {
 
     public void visit(MemberExprNode it) {
         it.obj.accept(this);
-        if (it.type.dim > 0) {//数组类型只能调用.size()
+        if (it.obj.type.dim > 0) {//数组类型只能调用.size()
             if (!it.member.equals("size")) {
                 throw new semanticError("member function for array is not size()", it.pos);
             } else {
@@ -506,7 +511,7 @@ public class SemanticChecker implements ASTVisitor {
             throw new semanticError("pre expression not left value",it.pos);
         }
         it.type=new exprType("int",0);
-        it.isLeftValue=true;
+        it.isLeftValue=false;//a++不是左值
     }
 
     public void visit(ParenExprNode it){//加括号不会改变表达式性质

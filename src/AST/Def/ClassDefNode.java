@@ -16,6 +16,8 @@ public class ClassDefNode extends DefNode {
 
     public ClassDefNode(Position pos) {
         super(pos);
+        vars = new ArrayList<>();
+        funcs = new ArrayList<>();
     }
 
     @Override

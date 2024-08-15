@@ -45,6 +45,7 @@ public class Type {
             this.isBool = true;
         }else if(type.equals("string")){
             this.isString = true;
+            this.typeName= "string";
         }else if(type.equals("void")){
             this.isVoid = true;
         }else if(type.equals("null")){
@@ -67,7 +68,7 @@ public class Type {
 
         if(this.dim==t.dim){
             if(this.isClass&&t.isClass){
-                return this.typeName==t.typeName;
+                return this.typeName.equals(t.typeName);
             }else if(!this.isClass&&!t.isClass){
                 return this.isVoid==t.isVoid&&this.isBool==t.isBool&&this.isString==t.isString&&this.isInt==t.isInt;
             }

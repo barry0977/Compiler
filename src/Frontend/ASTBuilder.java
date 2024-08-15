@@ -67,7 +67,7 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
     @Override public ASTNode visitFuncDef(MxParser.FuncDefContext ctx) {
         FuncDefNode funcDefNode=new FuncDefNode(new Position(ctx));
         if(ctx.returntype().Void()!=null){
-            funcDefNode.returntype.isVoid=true;
+            funcDefNode.returntype=new Type("void",0);
         }else{
             Type type=new Type(ctx.returntype().type());
             funcDefNode.returntype=type;
