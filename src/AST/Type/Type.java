@@ -14,6 +14,7 @@ public class Type {
             this.isBool = true;
         }else if(type.equals("string")){
             this.isString=true;
+            this.typeName="string";
         }else if(type.equals("void")){
             this.isVoid = true;
         }else if(type.equals("null")){

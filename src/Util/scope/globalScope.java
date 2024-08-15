@@ -77,11 +77,14 @@ public class globalScope extends Scope{
         if(vars.containsKey(func.name)){
             throw new semanticError("Duplicate function name with function: "+func.name,func.pos);
         }
+        if(classDecls.containsKey(func.name)){
+            throw new semanticError("Duplicate function name with class:  "+func.name,func.pos);
+        }
         funcDecls.put(func.name,new FuncDecl(func));
     }
 
     public void addClass(ClassDefNode clas){
-        if(classDecls.containsKey(clas.name)){
+        if(classDecls.containsKey(clas.name)||funcDecls.containsKey(clas.name)){//类名和函数名不允许重复
             throw new semanticError("Duplicate class name: "+clas.name,clas.pos);
         }
         classDecls.put(clas.name,new ClassDecl(clas));

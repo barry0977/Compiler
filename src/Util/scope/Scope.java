@@ -93,6 +93,44 @@ public class Scope {
         }
     }
 
+    public boolean inLoop(){
+        if(this instanceof loopScope) {
+            return true;
+        }else if(this.parent != null){
+            return this.parent.inLoop();
+        }else{
+            return false;
+        }
+    }
+
+    public boolean inFunc(){
+        if(this instanceof funcScope) {
+            return true;
+        }else if(this.parent != null){
+            return this.parent.inFunc();
+        }else{
+            return false;
+        }
+    }
+
+    public void setReturn(){
+        if(this instanceof funcScope) {
+            ((funcScope) this).isReturned=true;
+        }else if(this.parent != null){
+            this.parent.setReturn();
+        }
+    }
+
+    public Type getReturnType(){
+        if(this instanceof funcScope) {
+            return ((funcScope) this).returnType;
+        }else if(this.parent != null){
+            return this.parent.getReturnType();
+        }else{
+            return null;
+        }
+    }
+
     //寻找Identifier（变量或函数）
     public exprType getIdentifier(String name){
         if(vars.containsKey(name)) {

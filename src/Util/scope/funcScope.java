@@ -23,4 +23,7 @@ public class funcScope extends Scope{
         params = new HashMap<>();
     }
 
+//    public void setReturn(){
+//        isReturned=true;
+//    }
 }

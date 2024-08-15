@@ -40,7 +40,11 @@ public class SymbolCollector implements ASTVisitor {
         //类中变量支持前向引用
         for(var x:it.vars){
             for(var v:x.vars) {
-                it.scope.addVar(v.first,v.second.type,x.pos);
+                if(v.second==null){
+                    it.scope.addVar(v.first,x.vartype,x.pos);
+                }else{
+                    it.scope.addVar(v.first,x.vartype,x.pos);
+                }
             }
         }
         curScope=it.scope.getParent();

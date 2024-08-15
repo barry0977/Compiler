@@ -82,24 +82,16 @@ public class SemanticChecker implements ASTVisitor {
             }
         }
         for(var x:it.vars){
-            curScope.addVar(x.first,it.vartype,it.pos);
             if(x.second!=null){
                 x.second.accept(this);
                 if(!x.second.type.equals(it.vartype)){
                     throw new semanticError("initial type mismatch",it.pos);
                 }
             }
+            if(!(curScope instanceof classScope)){//类里面的变量symbolcollect时已经加过了
+                curScope.addVar(x.first,it.vartype,it.pos);
+            }
         }
-//        if(curScope==gScope){//全局变量
-//            for(var x:it.vars){
-//                gScope.addVar(x.first,it.vartype,it.pos);
-//            }
-//        }else{//局部变量
-//            for(var x:it.vars){
-//                curScope.addVar(x.first,it.vartype,it.pos);
-//            }
-//        }
-
     }
 
     public void visit(ConstructNode it){
@@ -175,14 +167,14 @@ public class SemanticChecker implements ASTVisitor {
     }
 
     public void visit(BreakStmtNode it){
-        if(curScope.stype!= Scope.scopeType.loopscope){
+        if(!curScope.inLoop()){
             System.out.println("Invalid Control Flow");
             throw new semanticError("Break not in loop",it.pos);
         }
     }
 
     public void visit(ContinueStmtNode it){
-        if(curScope.stype!= Scope.scopeType.loopscope){
+        if(!curScope.inLoop()){
             System.out.println("Invalid Control Flow");
             throw new semanticError("Continue not in loop",it.pos);
         }
@@ -193,17 +185,18 @@ public class SemanticChecker implements ASTVisitor {
     }
 
     public void visit(ReturnStmtNode it){
-        if(curScope.stype!=Scope.scopeType.funcscope){
+        if(!curScope.inFunc()){
             throw new semanticError("Return not in Function",it.pos);
         }
-        ((funcScope) curScope).isReturned=true;
+//        ((funcScope) curScope).isReturned=true;
+        curScope.setReturn();
         if(it.returnExpr!=null){
             it.returnExpr.accept(this);
-            if(!it.returnExpr.type.equals(((funcScope) curScope).returnType)){//返回表达式的类型与函数返回类型不符
+            if(!it.returnExpr.type.equals(curScope.getReturnType())){//返回表达式的类型与函数返回类型不符
                 throw new semanticError("Return type mismatch",it.pos);
             }
         }else{
-            if(!((funcScope) curScope).returnType.equals(new Type("void",0))){//如果函数返回类型不是void，则报错
+            if(!curScope.getReturnType().equals(new Type("void",0))){//如果函数返回类型不是void，则报错
                 throw new semanticError("Return type mismatch",it.pos);
             }
         }
@@ -230,7 +223,6 @@ public class SemanticChecker implements ASTVisitor {
     public void visit(ArrayExprNode it){
         it.array.accept(this);
         it.index.accept(this);
-//        System.err.println(it.index.type.toString());
         if(!(it.index.type.isInt&&it.index.type.dim==0)){
             throw new semanticError("Array index not int",it.pos);
         }

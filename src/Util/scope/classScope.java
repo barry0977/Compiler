@@ -17,6 +17,7 @@ public class classScope extends Scope {
     public classScope(Scope parent) {
         super(parent);
         this.stype=scopeType.classscope;
+        funcs = new HashMap<>();
     }
 
     public void addFunc(FuncDefNode func){
