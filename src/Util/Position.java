@@ -15,4 +15,8 @@ public class Position {
         this.row = ctx.start.getLine();
         this.col = ctx.start.getCharPositionInLine();
     }
+
+    public String toString() {
+        return "(" + row + "," + col + ")";
+    }
 }

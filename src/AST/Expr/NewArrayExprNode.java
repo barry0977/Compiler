@@ -12,6 +12,7 @@ public class NewArrayExprNode extends ExprNode{
     public NewArrayExprNode(Position pos){
         super(pos);
         sizelist = new ArrayList<>();
+        init = new ArrayConstNode(pos);
     }
 
     @Override

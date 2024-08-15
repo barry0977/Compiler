@@ -19,6 +19,7 @@ public class FuncDefNode extends DefNode {
     public FuncDefNode(Position pos) {
         super(pos);
         body = new ArrayList<>();
+        paraslist = new ParalistNode(pos);
     }
 
     @Override

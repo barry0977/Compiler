@@ -19,7 +19,8 @@ public class Scope {
 
     public Scope(Scope parent) {
         this.parent = parent;
-        stype = scopeType.blockscope;
+        this.vars = new HashMap<>();
+        this.stype = scopeType.blockscope;
     }
 
     public Scope getParent(){

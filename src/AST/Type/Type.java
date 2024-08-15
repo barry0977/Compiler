@@ -76,4 +76,21 @@ public class Type {
         }
         return false;
     }
+
+    public String toString(){
+        if(this.isInt){
+            return "int "+this.dim;
+        }else if(this.isBool){
+            return "bool "+this.dim;
+        }else if(this.isString){
+            return "string "+this.dim;
+        }else if(this.isClass){
+            return this.typeName+' '+this.dim;
+        }else if(this.isVoid){
+            return "void "+this.dim;
+        }else if(this.isNull){
+            return "null "+this.dim;
+        }
+        return "empty "+this.dim;
+    }
 }

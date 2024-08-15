@@ -12,6 +12,7 @@ import AST.Type.Type;
 import AST.Type.exprType;
 import Util.Decl.ClassDecl;
 import Util.Decl.FuncDecl;
+import Util.Pair;
 import Util.error.*;
 import Util.scope.*;
 
@@ -73,11 +74,36 @@ public class SemanticChecker implements ASTVisitor {
     }
 
     public void visit(VarDefNode it){
-        if(curScope==gScope){
-            for(var x:it.vars){
-                gScope.addVar(x.first,x.second.type,it.pos);
+        System.err.println("enter Vardef\n");
+        if(it.vartype.isClass){//判断用的类是否定义过
+            ClassDecl class_=gScope.classDecls.get(it.vartype.typeName);
+            if(class_==null){
+                throw new semanticError("Class "+it.vartype.typeName+" not found",it.pos);
             }
         }
+        for(var x:it.vars){
+            curScope.addVar(x.first,it.vartype,it.pos);
+            System.err.println(it.vartype.toString());
+            System.err.println('\n');
+            if(x.second!=null){
+                x.second.accept(this);
+                System.err.println(x.second.type.toString());
+                System.err.println('\n');
+                if(!x.second.type.equals(it.vartype)){
+                    throw new semanticError("initial type mismatch",it.pos);
+                }
+            }
+        }
+//        if(curScope==gScope){//全局变量
+//            for(var x:it.vars){
+//                gScope.addVar(x.first,it.vartype,it.pos);
+//            }
+//        }else{//局部变量
+//            for(var x:it.vars){
+//                curScope.addVar(x.first,it.vartype,it.pos);
+//            }
+//        }
+
     }
 
     public void visit(ConstructNode it){
@@ -224,6 +250,10 @@ public class SemanticChecker implements ASTVisitor {
         if(!it.lhs.isLeftValue){
             throw new semanticError("lhs not left value",it.pos);
         }
+        //注意如果右表达式为null的情况
+//        if(it.rhs.type.isNull) {
+//
+//        }
         if(!it.lhs.type.equals(it.rhs.type)){
             throw new semanticError("assign type mismatch",it.pos);
         }
@@ -387,6 +417,40 @@ public class SemanticChecker implements ASTVisitor {
     public void visit(NewArrayExprNode it){
         for(var len:it.sizelist){
             len.accept(this);
+        }
+        if(it.init!=null){
+            it.init.accept(this);
+        }
+        if(it.type.isClass){
+            ClassDecl class_ = gScope.getClass(it.type.typeName);
+            if(class_==null){
+                throw new semanticError("class not found",it.pos);
+            }
+        }
+        for(var len:it.sizelist){
+            if(len.type==null){
+                System.err.println("7\n");
+            }else{
+                System.err.println("8\n");
+            }
+            if(!len.type.isInt){
+                throw new semanticError("array size not int",it.pos);
+            }
+        }
+        if(it.init.type.isNull){//如果初始值为null
+            if(it.type.dim<it.init.type.dim){
+                throw new semanticError("array dim out of range",it.pos);
+            }else{
+                it.type=new exprType(it.init.type);
+                it.isLeftValue=false;
+            }
+        }else{//需要判断
+            if(!it.type.equals(it.init.type)){
+                throw new semanticError("array type mismatch",it.pos);
+            }else{
+                it.type=new exprType(it.init.type);
+                it.isLeftValue=false;
+            }
         }
 
     }
