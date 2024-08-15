@@ -100,6 +100,9 @@ public class SemanticChecker implements ASTVisitor {
             if(stmt instanceof EmptyStmtNode){
                 stmt.accept(this);
             }
+            if(stmt instanceof ReturnStmtNode){//构造函数中不能有return
+                throw new semanticError("Return statement should not be in Construct",it.pos);
+            }
         }
         curScope=curScope.parent;
     }
