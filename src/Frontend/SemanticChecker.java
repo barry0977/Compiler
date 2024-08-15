@@ -341,16 +341,6 @@ public class SemanticChecker implements ASTVisitor {
                 throw new semanticError("string operation wrong",it.pos);
             }
         }
-        //int
-        if(it.lhs.type.isInt){
-            if(it.opCode.equals("==")||it.opCode.equals("!=")||it.opCode.equals("<")||it.opCode.equals(">")||it.opCode.equals("<=")||it.opCode.equals(">=")){
-                it.type=new exprType("bool",0);
-            }else{
-                it.type=new exprType("int",0);
-            }
-            it.isLeftValue=false;
-            return;
-        }
         //class
         if(it.lhs.type.isClass){
             if(it.opCode.equals("==")||it.opCode.equals("!=")){
@@ -362,6 +352,14 @@ public class SemanticChecker implements ASTVisitor {
                 throw new semanticError("class operation wrong",it.pos);
             }
         }
+        //int
+        if(it.opCode.equals("==")||it.opCode.equals("!=")||it.opCode.equals("<")||it.opCode.equals(">")||it.opCode.equals("<=")||it.opCode.equals(">=")){
+            it.type=new exprType("bool",0);
+        }else{
+            it.type=new exprType("int",0);
+        }
+        it.isLeftValue=false;
+        return;
     }
 
     public void visit(ConditionExprNode it){
