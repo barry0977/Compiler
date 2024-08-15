@@ -1,6 +1,8 @@
 package Util.scope;
 
 import AST.Type.Type;
+import AST.Type.exprType;
+import Util.Decl.ClassDecl;
 import Util.Decl.FuncDecl;
 import Util.Position;
 import Util.error.semanticError;
@@ -77,5 +79,28 @@ public class Scope {
                 return null;
             }
         }
+    }
+
+    //寻找所在的第一个类
+    public String inClass(){
+        if(this instanceof classScope) {
+            return ((classScope) this).classname;
+        }else if(this.parent != null){
+            return this.parent.inClass();
+        }else{
+            return null;
+        }
+    }
+
+    //寻找Identifier（变量或函数）
+    public exprType getIdentifier(String name){
+        if(vars.containsKey(name)) {
+            return new exprType(vars.get(name));
+        }else{
+            if(parent!=null){
+                return parent.getIdentifier(name);
+            }
+        }
+        return null;
     }
 }

@@ -20,7 +20,7 @@ public class Main {
         String name = "test.yx";
         InputStream input = new FileInputStream(name);
 
-        try {
+//        try {
             ProgramNode ASTRoot;
             globalScope gScope = new globalScope(null);
 
@@ -35,7 +35,7 @@ public class Main {
             ASTRoot=(ProgramNode) astBuilder.visit(parseTreeRoot);
             SymbolCollector symbolCollector = new SymbolCollector(gScope);
             SemanticChecker semanticChecker = new SemanticChecker(gScope);
-        } catch (error er) {
+//        } catch (error er) {
 //            System.err.println(er.toString());
 //            throw new RuntimeException();
 //        }

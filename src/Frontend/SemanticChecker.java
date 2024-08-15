@@ -231,8 +231,38 @@ public class SemanticChecker implements ASTVisitor {
         it.isLeftValue=false;
     }
 
-    void visit(BasicExprNode it){
-        //TODO
+    public void visit(BasicExprNode it){
+        if(it.isInt){
+            it.type=new exprType("int",0);
+            it.isLeftValue=false;
+        }else if(it.isTrue||it.isFalse){
+            it.type=new exprType("bool",0);
+            it.isLeftValue=false;
+        }else if(it.isString){
+            it.type=new exprType("string",0);
+            it.isLeftValue=false;
+        }else if(it.isNull){
+            it.type=new exprType("null",0);
+            it.isLeftValue=false;
+        }else if(it.isThis){
+            String inclass=curScope.inClass();
+            if(inclass==null){
+                throw new semanticError("This not in class",it.pos);
+            }
+            it.type=new exprType(inclass,0);
+            it.isLeftValue=false;
+        }else if(it.isIdentifier){
+            exprType idtype=curScope.getIdentifier(it.name);
+            if(idtype==null){
+                throw new semanticError("Variable "+it.name+" not found",it.pos);
+            }
+            it.type=new exprType(idtype);
+            if(idtype.isFunc){
+                it.isLeftValue=false;
+            }else{
+                it.isLeftValue=true;
+            }
+        }
     }
 
     public void visit(BinaryExprNode it){
@@ -354,7 +384,13 @@ public class SemanticChecker implements ASTVisitor {
         throw new semanticError("member not found", it.pos);
     }
 
-    void visit(NewArrayExprNode it);
+    public void visit(NewArrayExprNode it){
+        for(var len:it.sizelist){
+            len.accept(this);
+        }
+
+    }
+
     public void visit(NewVarExprNode it){
         if(it.type.isClass){
             ClassDecl class_=gScope.getClass(it.type.typeName);
@@ -429,6 +465,41 @@ public class SemanticChecker implements ASTVisitor {
     }
 
     public void visit(ArrayConstNode it){
-
+        for(var elem:it.elements){
+            elem.accept(this);
+        }
+        if(it.elements.isEmpty()){//{ }
+            it.type=new exprType("null",0);
+        }
+        exprType firsttype=it.elements.get(0).type;
+        if(firsttype.isFunc){
+            throw new semanticError("function should not be in array",it.pos);
+        }
+        it.type=new exprType(firsttype);//先将type定为第一个元素的type
+        it.isLeftValue=false;
+        for(var elem:it.elements){
+            if(it.type.isNull){//如果现在是null，则后面可以是一切类型
+                if(elem.type.isNull){//如果都是null，取较大维数的
+                    it.type.dim= Math.max(it.type.dim, elem.type.dim);
+                }else{//如果遇到不是null的，如果维数正确则修改type
+                    if(elem.type.dim<it.type.dim){
+                        throw new semanticError("array element dimension mismatch",it.pos);
+                    }else{
+                        it.type=new exprType(elem.type);
+                    }
+                }
+            }else{//如果不是null，则需要比较
+                if(elem.type.isNull){
+                    if(elem.type.dim>it.type.dim){
+                        throw new semanticError("array element dimension mismatch",it.pos);
+                    }
+                }else{
+                    if(!it.type.equals(elem.type)){
+                        throw new semanticError("array element type mismatch",it.pos);
+                    }
+                }
+            }
+        }
+        it.type.dim+=1;
     }
 }

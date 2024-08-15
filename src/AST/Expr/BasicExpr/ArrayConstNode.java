@@ -6,7 +6,7 @@ import Util.Position;
 
 import java.util.ArrayList;
 
-public class ArrayConstNode extends ExprNode {
+public class ArrayConstNode extends BasicExprNode {
     public ArrayList<BasicExprNode> elements;
 
     public ArrayConstNode(Position pos) {

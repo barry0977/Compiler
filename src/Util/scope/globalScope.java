@@ -3,6 +3,7 @@ package Util.scope;
 import AST.Def.ClassDefNode;
 import AST.Def.FuncDefNode;
 import AST.Type.Type;
+import AST.Type.exprType;
 import Util.Decl.ClassDecl;
 import Util.Decl.FuncDecl;
 import Util.Position;
@@ -84,5 +85,13 @@ public class globalScope extends Scope{
             throw new semanticError("Duplicate class name: "+clas.name,clas.pos);
         }
         classDecls.put(clas.name,new ClassDecl(clas));
+    }
+
+    @Override
+    public exprType getIdentifier(String name){
+        if(funcDecls.containsKey(name)){
+            return new exprType(name,funcDecls.get(name));
+        }
+        return super.getIdentifier(name);
     }
 }

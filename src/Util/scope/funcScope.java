@@ -1,6 +1,7 @@
 package Util.scope;
 
 import AST.Type.Type;
+import AST.Type.exprType;
 
 import java.util.HashMap;
 
@@ -21,4 +22,5 @@ public class funcScope extends Scope{
         this.returnType = type;
         params = new HashMap<>();
     }
+
 }

@@ -6,7 +6,7 @@ import Util.Position;
 import java.util.ArrayList;
 
 public class NewArrayExprNode extends ExprNode{
-    public ArrayList<Integer> sizelist;
+    public ArrayList<ExprNode> sizelist;
     public ArrayConstNode init;
 
     public NewArrayExprNode(Position pos){

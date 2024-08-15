@@ -2,6 +2,7 @@ package Util.scope;
 
 import AST.Def.FuncDefNode;
 import AST.Type.Type;
+import AST.Type.exprType;
 import Util.Decl.FuncDecl;
 import Util.Position;
 import Util.error.semanticError;
@@ -11,6 +12,7 @@ import java.util.HashMap;
 
 public class classScope extends Scope {
     public HashMap<String, FuncDecl>funcs;
+    public String classname;
 
     public classScope(Scope parent) {
         super(parent);
@@ -38,4 +40,11 @@ public class classScope extends Scope {
         vars.put(name, type);
     }
 
+    @Override
+    public exprType getIdentifier(String name) {
+        if(funcs.containsKey(name)){
+            return new exprType(name,funcs.get(name));
+        }
+        return super.getIdentifier(name);
+    }
 }

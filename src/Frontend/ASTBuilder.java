@@ -4,7 +4,6 @@ import AST.Def.*;
 import AST.Expr.*;
 import AST.Expr.BasicExpr.ArrayConstNode;
 import AST.Expr.BasicExpr.BasicExprNode;
-import AST.Expr.BasicExpr.IdentifierNode;
 import AST.ProgramNode;
 import AST.Stmt.*;
 import AST.Type.Type;
@@ -292,15 +291,20 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
     @Override public ASTNode visitNewArrayExpr(MxParser.NewArrayExprContext ctx) {
         NewArrayExprNode newArrayExprNode=new NewArrayExprNode(new Position(ctx));
         newArrayExprNode.type=new exprType(ctx.type());
+        for(var length:ctx.expression()){
+            newArrayExprNode.sizelist.add((ExprNode) visit(length));
+        }
+        if(ctx.constArray()==null){
+            newArrayExprNode.init=null;
+        }else{
+            newArrayExprNode.init=(ArrayConstNode) visit(ctx.constArray());
+        }
         return newArrayExprNode;
 
     }
 
     @Override public ASTNode visitPrimary(MxParser.PrimaryContext ctx) {
         if(ctx.Identifier()!=null){
-//            IdentifierNode identifierNode=new IdentifierNode(new Position(ctx));
-//            identifierNode.name=ctx.Identifier().getText();
-//            return identifierNode;
             BasicExprNode basicExprNode=new BasicExprNode(new Position(ctx));
             basicExprNode.isIdentifier=true;
             basicExprNode.name=ctx.Identifier().getText();

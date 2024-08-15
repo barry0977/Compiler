@@ -24,22 +24,13 @@ public class SymbolCollector implements ASTVisitor {
         for(var def:node.defNodes){
             def.accept(this);
         }
-//        for(var clas:node.classNodes){
-//            gScope.addClass(clas);
-//            visit(clas);
-//        }
-//        for(var x:node.varNodes){
-//            for(var v:x.vars) {
-//                gScope.vars.put(v.first,x.vartype);
-//            }
-//            visit(x);
-//        }
     }
 
     @Override
     public void visit(ClassDefNode it){
         gScope.addClass(it);
         it.scope=new classScope(curScope);
+        it.scope.classname=it.name;
         curScope=it.scope;
         for(var func:it.funcs){
             it.scope.addFunc(func);
