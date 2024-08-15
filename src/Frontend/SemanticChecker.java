@@ -9,6 +9,8 @@ import AST.Expr.BasicExpr.BasicExprNode;
 import AST.ProgramNode;
 import AST.Stmt.*;
 import AST.Type.Type;
+import AST.Type.exprType;
+import Util.Decl.ClassDecl;
 import Util.Decl.FuncDecl;
 import Util.error.*;
 import Util.scope.*;
@@ -202,7 +204,20 @@ public class SemanticChecker implements ASTVisitor {
     //空语句不需要操作
     public void visit(EmptyStmtNode it){}
 
-    void visit(ArrayExprNode it);
+    public void visit(ArrayExprNode it){
+        it.array.accept(this);
+        it.index.accept(this);
+        if(!it.index.type.isInt){
+            throw new semanticError("Array index not int",it.pos);
+        }
+        if(it.array.type.dim==0){
+            throw new semanticError("Array dimension is zero",it.pos);
+        }
+        it.type=new exprType(it.array.type);
+        it.type.dim--;//维度减1
+        it.isLeftValue=true;
+    }
+
     public void visit(AssignExprNode it){
         it.lhs.accept(this);
         it.rhs.accept(this);
@@ -212,11 +227,11 @@ public class SemanticChecker implements ASTVisitor {
         if(!it.lhs.type.equals(it.rhs.type)){
             throw new semanticError("assign type mismatch",it.pos);
         }
-        it.type=new Type(it.rhs.type);
+        it.type=new exprType(it.rhs.type);
         it.isLeftValue=false;
     }
 
-    public void visit(BasicExprNode it){
+    void visit(BasicExprNode it){
         //TODO
     }
 
@@ -230,7 +245,7 @@ public class SemanticChecker implements ASTVisitor {
 
         if(it.lhs.type.isBool){//bool 类型仅可做 ==、!=、&& 以及 || 运算
             if(it.opCode.equals("==")||it.opCode.equals("!=")||it.opCode.equals("&&")||it.opCode.equals("||")){
-                it.type=new Type("bool",0);
+                it.type=new exprType("bool",0);
                 it.isLeftValue=false;
                 return;
             }else{
@@ -240,7 +255,7 @@ public class SemanticChecker implements ASTVisitor {
 
         if(it.lhs.type.dim>0||it.rhs.type.dim>0){//数组（lhs或rhs可以为null）
             if(it.opCode.equals("==")||it.opCode.equals("!=")){
-                it.type=new Type("bool",0);
+                it.type=new exprType("bool",0);
                 it.isLeftValue=false;
                 return;
             }else{
@@ -250,11 +265,11 @@ public class SemanticChecker implements ASTVisitor {
         //string
         if(it.lhs.type.isString){
             if(it.opCode.equals("+")){
-                it.type=new Type("string",0);
+                it.type=new exprType("string",0);
                 it.isLeftValue=false;
                 return;
             }else if(it.opCode.equals("==")||it.opCode.equals("!=")||it.opCode.equals("<")||it.opCode.equals(">")||it.opCode.equals("<=")||it.opCode.equals(">=")){
-                it.type=new Type("bool",0);
+                it.type=new exprType("bool",0);
                 it.isLeftValue=false;
                 return;
             }else{
@@ -263,14 +278,11 @@ public class SemanticChecker implements ASTVisitor {
         }
         //int
         if(it.opCode.equals("==")||it.opCode.equals("!=")||it.opCode.equals("<")||it.opCode.equals(">")||it.opCode.equals("<=")||it.opCode.equals(">=")){
-            it.type=new Type("bool",0);
-            it.isLeftValue=false;
-            return;
+            it.type=new exprType("bool",0);
         }else{
-            it.type=new Type("int",0);
-            it.isLeftValue=false;
-            return;
+            it.type=new exprType("int",0);
         }
+        it.isLeftValue=false;
     }
 
     public void visit(ConditionExprNode it){
@@ -283,30 +295,88 @@ public class SemanticChecker implements ASTVisitor {
         if(!it.then_.type.equals(it.else_.type)){
             throw new semanticError("ConditionExpr type mismatch",it.pos);
         }
-        it.type=new Type(it.cond_.type);
+        it.type=new exprType(it.cond_.type);
         it.isLeftValue=false;
     }
 
-    void visit(FuncExprNode it);
-    void visit(MemberExprNode it);
-    void visit(MemberFuncExprNode it);
+    public void visit(FuncExprNode it){
+        it.func.accept(this);
+        for(var arg:it.args){
+            arg.accept(this);
+        }
+        if(!it.func.type.isFunc){//调用的不是函数
+            throw new semanticError("Func operation not function",it.pos);
+        }
+        FuncDecl func=curScope.getFunc(it.func.type.funcinfo.name,true);//从scope中去找函数，找不到就往上一层
+        if(func==null){
+            throw new semanticError("Func does not exist",it.pos);
+        }
+        if(func.params.size()!=it.args.size()){
+            throw new semanticError("Func params number mismatch",it.pos);
+        }else{
+            for(int i=0;i<it.args.size();i++){
+                if(!it.args.get(i).type.equals(func.params.get(i))){
+                    throw new semanticError("Func params mismatch",it.pos);
+                }
+            }
+        }
+        it.type=new exprType(it.func.type.funcinfo.returnType);//如果参数匹配，则类型为函数返回值
+        it.isLeftValue=false;
+    }
+
+    public void visit(MemberExprNode it) {
+        it.obj.accept(this);
+        if (it.type.dim > 0) {//数组类型只能调用.size()
+            if (!it.member.equals("size")) {
+                throw new semanticError("member function for array is not size()", it.pos);
+            } else {
+                it.type = new exprType("size", new FuncDecl("size", new Type("int", 0), "", "", false));
+                it.isLeftValue = false;
+                return;
+            }
+        }
+        //寻找所在的类
+        ClassDecl class_ = gScope.getClass(it.obj.type.typeName);//从全局变量里面找到类
+        //是否是变量
+        Type var = class_.vars.get(it.member);
+        if (var != null) {
+            it.type = new exprType(var);
+            it.isLeftValue = true;//数组对象的元素可作为左值
+            return;
+        }
+        //是否是函数
+        FuncDecl func_ = class_.funcs.get(it.member);
+        if (func_ != null) {
+            it.type = new exprType(it.member, func_);
+            it.isLeftValue = false;
+            return;
+        }
+        throw new semanticError("member not found", it.pos);
+    }
+
     void visit(NewArrayExprNode it);
-    void visit(NewVarExprNode it);
+    public void visit(NewVarExprNode it){
+        if(it.type.isClass){
+            ClassDecl class_=gScope.getClass(it.type.typeName);
+            if(class_==null){
+                throw new semanticError("class not found in new var",it.pos);
+            }
+        }
+    }
+
     public void visit(UnaryExprNode it){
         it.expr.accept(this);
         if(it.opCode.equals("-")||it.opCode.equals("~")){
             if(it.expr.type.isInt){
-                it.type=new Type("int",0);
+                it.type=new exprType("int",0);
                 it.isLeftValue=false;
-                return;
             }else{
                 throw new semanticError("unary operation not int",it.pos);
             }
         }else if(it.opCode.equals("!")){
             if(it.expr.type.isBool){
-                it.type=new Type("bool",0);
+                it.type=new exprType("bool",0);
                 it.isLeftValue=false;
-                return;
             }else{
                 throw new semanticError("unary operation not bool",it.pos);
             }
@@ -323,7 +393,7 @@ public class SemanticChecker implements ASTVisitor {
         if(!it.expr.isLeftValue){//必须是左值才能自加自减
             throw new semanticError("pre expression not left value",it.pos);
         }
-        it.type=new Type("int",0);
+        it.type=new exprType("int",0);
         it.isLeftValue=true;
     }
 
@@ -335,19 +405,30 @@ public class SemanticChecker implements ASTVisitor {
         if(!it.expr.isLeftValue){//必须是左值才能自加自减
             throw new semanticError("pre expression not left value",it.pos);
         }
-        it.type=new Type("int",0);
+        it.type=new exprType("int",0);
         it.isLeftValue=true;
     }
 
     public void visit(ParenExprNode it){//加括号不会改变表达式性质
         it.expr.accept(this);
-        it.type=new Type(it.expr.type);
+        it.type=new exprType(it.expr.type);
         it.isLeftValue=it.expr.isLeftValue;
     }
 
     public void visit(FStringExprNode it){
-        //TODO
+        for(var expr:it.exprlist){
+            expr.accept(this);
+        }
+        for(var expr:it.exprlist){
+            if(!(expr.type.isInt||expr.type.isBool||expr.type.isString)){
+                throw new semanticError("fstring expr type wrong",it.pos);
+            }
+        }
+        it.type=new exprType("string",0);
+        it.isLeftValue=false;
     }
 
-    void visit(ArrayConstNode it);
+    public void visit(ArrayConstNode it){
+
+    }
 }

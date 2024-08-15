@@ -26,7 +26,7 @@ public class ClassDecl {
             }
         }
         for(var funcDef : classdef.funcs){
-            this.funcs.put(funcDef.funcname,new FuncDecl(funcDef));
+            this.funcs.put(funcDef.name,new FuncDecl(funcDef));
         }
     }
 }

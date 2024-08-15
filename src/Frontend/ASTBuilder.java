@@ -8,6 +8,7 @@ import AST.Expr.BasicExpr.IdentifierNode;
 import AST.ProgramNode;
 import AST.Stmt.*;
 import AST.Type.Type;
+import AST.Type.exprType;
 import Parser.MxBaseVisitor;
 import Parser.MxParser;
 import AST.ASTNode;
@@ -188,8 +189,7 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
 
     @Override public ASTNode visitNewVarExpr(MxParser.NewVarExprContext ctx) {
         NewVarExprNode newVarExprNode=new NewVarExprNode(new Position(ctx));
-        newVarExprNode.type=new Type(ctx.type());
-        newVarExprNode.isLeftValue=false;
+        newVarExprNode.type=new exprType(ctx.type());
         return newVarExprNode;
     }
 
@@ -262,13 +262,6 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
         return parenExprNode;
     }
 
-    @Override public ASTNode visitMemberfuncExpr(MxParser.MemberfuncExprContext ctx) {
-        MemberFuncExprNode memberFuncExprNode=new MemberFuncExprNode(new Position(ctx));
-        memberFuncExprNode.func=ctx.Identifier().getText();
-        memberFuncExprNode.obj=(ExprNode) visit(ctx.expression(0));
-        return memberFuncExprNode;
-    }
-
     //还没处理好
     @Override public ASTNode visitBasicExpr(MxParser.BasicExprContext ctx) {
         return new BasicExprNode(new Position(ctx));
@@ -298,7 +291,7 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
 
     @Override public ASTNode visitNewArrayExpr(MxParser.NewArrayExprContext ctx) {
         NewArrayExprNode newArrayExprNode=new NewArrayExprNode(new Position(ctx));
-        newArrayExprNode.type=new Type(ctx.type());
+        newArrayExprNode.type=new exprType(ctx.type());
         return newArrayExprNode;
 
     }

@@ -31,7 +31,6 @@ public interface ASTVisitor {
     void visit(ConditionExprNode it);
     void visit(FuncExprNode it);
     void visit(MemberExprNode it);
-    void visit(MemberFuncExprNode it);
     void visit(NewArrayExprNode it);
     void visit(NewVarExprNode it);
     void visit(UnaryExprNode it);

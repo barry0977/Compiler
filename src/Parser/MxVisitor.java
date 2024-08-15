@@ -210,13 +210,6 @@ public interface MxVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitParenExpr(MxParser.ParenExprContext ctx);
 	/**
-	 * Visit a parse tree produced by the {@code memberfuncExpr}
-	 * labeled alternative in {@link MxParser#expression}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitMemberfuncExpr(MxParser.MemberfuncExprContext ctx);
-	/**
 	 * Visit a parse tree produced by the {@code basicExpr}
 	 * labeled alternative in {@link MxParser#expression}.
 	 * @param ctx the parse tree

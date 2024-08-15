@@ -47,7 +47,6 @@ expression
     |expression '('(expression (',' expression)*)? ')' #funcExpr
     |expression '[' expression ']' #arrayExpr
     |expression op=Fullstop Identifier #memberExpr
-    |expression op=Fullstop Identifier '('(expression (',' expression)*)? ')' #memberfuncExpr
     |expression op=(Increment|Decrement) #sufExpr
     |<assoc=right>op=(Increment|Decrement) expression #preExpr
     |<assoc=right>op=(Not|Tilde|Minus) expression #unaryExpr

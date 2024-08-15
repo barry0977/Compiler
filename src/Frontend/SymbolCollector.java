@@ -90,7 +90,6 @@ public class SymbolCollector implements ASTVisitor {
     public void visit(ConditionExprNode it) { }
     public void visit(FuncExprNode it) { }
     public void visit(MemberExprNode it) { }
-    public void visit(MemberFuncExprNode it) { }
     public void visit(NewArrayExprNode it) { }
     public void visit(NewVarExprNode it) { }
     public void visit(UnaryExprNode it) { }

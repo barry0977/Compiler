@@ -1,6 +1,7 @@
 package Util.scope;
 
 import AST.Type.Type;
+import Util.Decl.FuncDecl;
 import Util.Position;
 import Util.error.semanticError;
 
@@ -51,6 +52,30 @@ public class Scope {
             return parent.getVar(name, lookUpon);
         }else{
             return null;
+        }
+    }
+
+    public FuncDecl getFunc(String name, boolean lookUpon) {
+        if(this instanceof globalScope) {//全局
+            if(((globalScope) this).funcDecls.containsKey(name)) {
+                return ((globalScope) this).funcDecls.get(name);
+            }else{
+                return null;
+            }
+        }else if(this instanceof classScope) {//类
+            if(((classScope) this).funcs.containsKey(name)){
+                return (((classScope) this).funcs.get(name));
+            }else if(parent!=null && lookUpon) {
+                return ((classScope) parent).getFunc(name, lookUpon);
+            }else{
+                return null;
+            }
+        }else{//只能往上找
+            if(parent!=null && lookUpon) {
+                return ((parent).getFunc(name, lookUpon));
+            }else{
+                return null;
+            }
         }
     }
 }

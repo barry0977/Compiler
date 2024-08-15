@@ -228,13 +228,6 @@ public class MxBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements MxV
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
-	@Override public T visitMemberfuncExpr(MxParser.MemberfuncExprContext ctx) { return visitChildren(ctx); }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation returns the result of calling
-	 * {@link #visitChildren} on {@code ctx}.</p>
-	 */
 	@Override public T visitBasicExpr(MxParser.BasicExprContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}

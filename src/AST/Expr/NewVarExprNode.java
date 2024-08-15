@@ -4,6 +4,7 @@ import AST.ASTVisitor;
 import Util.Position;
 
 public class NewVarExprNode extends ExprNode {
+
     public NewVarExprNode(Position pos) {
         super(pos);
     }

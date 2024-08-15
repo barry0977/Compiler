@@ -377,18 +377,6 @@ public class MxBaseListener implements MxListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
-	@Override public void enterMemberfuncExpr(MxParser.MemberfuncExprContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitMemberfuncExpr(MxParser.MemberfuncExprContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
 	@Override public void enterBasicExpr(MxParser.BasicExprContext ctx) { }
 	/**
 	 * {@inheritDoc}
