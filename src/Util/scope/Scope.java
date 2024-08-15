@@ -2,7 +2,6 @@ package Util.scope;
 
 import AST.Type.Type;
 import AST.Type.exprType;
-import Util.Decl.ClassDecl;
 import Util.Decl.FuncDecl;
 import Util.Position;
 import Util.error.semanticError;
@@ -33,6 +32,7 @@ public class Scope {
 
     public void addVar(String name, Type type, Position pos) {
         if(vars.containsKey(name)){
+            System.out.println("Multiple Definitions");
             throw new semanticError("Duplicate variable name: "+name,pos);
         }
         vars.put(name, type);

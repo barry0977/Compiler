@@ -108,6 +108,7 @@ public class SemanticChecker implements ASTVisitor {
         for(var para:it.Paralist){
             if(para.first.isClass){//如果参数类型是类，则从globalScope中去找
                 if(gScope.getClass(para.second)==null){
+                    System.out.println("Undefined Identifier");
                     throw new semanticError("type "+para.second+" cannot be found",it.pos);
                 }
             }
@@ -118,6 +119,7 @@ public class SemanticChecker implements ASTVisitor {
         if(it.condition!=null){
             it.condition.accept(this);
             if(!it.condition.type.equals(new Type("bool",0))){
+                System.out.println("Invalid Type");
                 throw new semanticError("If condition is not bool",it.pos);
             }
         }
@@ -137,6 +139,7 @@ public class SemanticChecker implements ASTVisitor {
         if(it.condition!=null){
             it.condition.accept(this);
             if(!it.condition.type.equals(new Type("bool",0))){
+                System.out.println("Invalid Type");
                 throw new semanticError("While condition is not bool",it.pos);
             }
         }
@@ -154,6 +157,7 @@ public class SemanticChecker implements ASTVisitor {
         if(it.condition!=null){
             it.condition.accept(this);
             if(!it.condition.type.equals(new Type("bool",0))){//条件表达式不是bool类型
+                System.out.println("Invalid Type");
                 throw new semanticError("For condition is not bool",it.pos);
             }
         }
@@ -227,6 +231,7 @@ public class SemanticChecker implements ASTVisitor {
             throw new semanticError("Array index not int",it.pos);
         }
         if(it.array.type.dim==0){
+            System.out.println("Dimension Out Of Bound");
             throw new semanticError("Array dimension is zero",it.pos);
         }
         it.type=new exprType(it.array.type);
@@ -366,6 +371,7 @@ public class SemanticChecker implements ASTVisitor {
         }
 //        FuncDecl func=curScope.getFunc(it.func.type.funcinfo.name,true);//从scope中去找函数，找不到就往上一层
         if(func==null){
+            System.out.println("Undefined Identifier");
             throw new semanticError("Func does not exist: "+it.func.type.funcinfo.name,it.pos);
         }
         if(func.params.size()!=it.args.size()){
@@ -373,6 +379,7 @@ public class SemanticChecker implements ASTVisitor {
         }else{
             for(int i=0;i<it.args.size();i++){
                 if(!it.args.get(i).type.equals(func.params.get(i))){
+                    System.out.println("Type Mismatch");
                     throw new semanticError("Func params mismatch",it.pos);
                 }
             }
@@ -408,6 +415,7 @@ public class SemanticChecker implements ASTVisitor {
             it.isLeftValue = false;
             return;
         }
+        System.out.println("Undefined Identifier");
         throw new semanticError("member not found", it.pos);
     }
 
@@ -421,12 +429,14 @@ public class SemanticChecker implements ASTVisitor {
         if(it.type.isClass){
             ClassDecl class_ = gScope.getClass(it.type.typeName);
             if(class_==null){
+                System.out.println("Undefined Identifier");
                 throw new semanticError("class not found",it.pos);
             }
         }
         //确认每个size都是int
         for(var len:it.sizelist){
             if(!len.type.isInt){
+                System.out.println("Type Mismatch");
                 throw new semanticError("array size not int",it.pos);
             }
         }
@@ -434,6 +444,7 @@ public class SemanticChecker implements ASTVisitor {
         if(it.init!=null){
             if(it.init.type.isNull){//如果初始值为null
                 if(it.type.dim<it.init.type.dim){
+                    System.out.println("Type Mismatch");
                     throw new semanticError("array dim out of range",it.pos);
                 }else{
                     it.type=new exprType(it.init.type);
@@ -441,6 +452,7 @@ public class SemanticChecker implements ASTVisitor {
                 }
             }else{//需要判断
                 if(!it.type.equals(it.init.type)){
+                    System.out.println("Type Mismatch");
                     throw new semanticError("array type mismatch",it.pos);
                 }else{
                     it.type=new exprType(it.init.type);
@@ -454,6 +466,7 @@ public class SemanticChecker implements ASTVisitor {
         if(it.type.isClass){
             ClassDecl class_=gScope.getClass(it.type.typeName);
             if(class_==null){
+                System.out.println("Undefined Identifier");
                 throw new semanticError("class not found in new var",it.pos);
             }
         }
@@ -466,6 +479,7 @@ public class SemanticChecker implements ASTVisitor {
                 it.type=new exprType("int",0);
                 it.isLeftValue=false;
             }else{
+                System.out.println("Type Mismatch");
                 throw new semanticError("unary operation not int",it.pos);
             }
         }else if(it.opCode.equals("!")){
@@ -473,6 +487,7 @@ public class SemanticChecker implements ASTVisitor {
                 it.type=new exprType("bool",0);
                 it.isLeftValue=false;
             }else{
+                System.out.println("Type Mismatch");
                 throw new semanticError("unary operation not bool",it.pos);
             }
         }else{
@@ -483,9 +498,11 @@ public class SemanticChecker implements ASTVisitor {
     public void visit(PreExprNode it){
         it.expr.accept(this);
         if(!it.expr.type.isInt){//只有int能进行自加自减运算
+            System.out.println("Type Mismatch");
             throw new semanticError("pre expression not int",it.pos);
         }
         if(!it.expr.isLeftValue){//必须是左值才能自加自减
+            System.out.println("Type Mismatch");
             throw new semanticError("pre expression not left value",it.pos);
         }
         it.type=new exprType("int",0);
@@ -495,9 +512,11 @@ public class SemanticChecker implements ASTVisitor {
     public void visit(SufExprNode it){
         it.expr.accept(this);
         if(!it.expr.type.isInt){//只有int能进行自加自减运算
+            System.out.println("Type Mismatch");
             throw new semanticError("pre expression not int",it.pos);
         }
         if(!it.expr.isLeftValue){//必须是左值才能自加自减
+            System.out.println("Type Mismatch");
             throw new semanticError("pre expression not left value",it.pos);
         }
         it.type=new exprType("int",0);
@@ -533,6 +552,7 @@ public class SemanticChecker implements ASTVisitor {
         }
         exprType firsttype=it.elements.get(0).type;
         if(firsttype.isFunc){
+            System.out.println("Type Mismatch");
             throw new semanticError("function should not be in array",it.pos);
         }
         it.type=new exprType(firsttype);//先将type定为第一个元素的type
@@ -543,6 +563,7 @@ public class SemanticChecker implements ASTVisitor {
                     it.type.dim= Math.max(it.type.dim, elem.type.dim);
                 }else{//如果遇到不是null的，如果维数正确则修改type
                     if(elem.type.dim<it.type.dim){
+                        System.out.println("Type Mismatch");
                         throw new semanticError("array element dimension mismatch",it.pos);
                     }else{
                         it.type=new exprType(elem.type);
@@ -551,10 +572,12 @@ public class SemanticChecker implements ASTVisitor {
             }else{//如果不是null，则需要比较
                 if(elem.type.isNull){
                     if(elem.type.dim>it.type.dim){
+                        System.out.println("Type Mismatch");
                         throw new semanticError("array element dimension mismatch",it.pos);
                     }
                 }else{
                     if(!it.type.equals(elem.type)){
+                        System.out.println("Type Mismatch");
                         throw new semanticError("array element type mismatch",it.pos);
                     }
                 }

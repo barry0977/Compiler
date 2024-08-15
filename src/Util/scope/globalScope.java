@@ -62,9 +62,11 @@ public class globalScope extends Scope{
     @Override
     public void addVar(String name, Type type, Position pos) {
         if(vars.containsKey(name)){
+            System.out.println("Multiple Definitions");
             throw new semanticError("Duplicate variable name: "+name,pos);
         }
         if(funcDecls.containsKey(name)){
+            System.out.println("Multiple Definitions");
             throw new semanticError("Duplicate variable name with function: "+name,pos);
         }
         vars.put(name, type);
@@ -72,12 +74,15 @@ public class globalScope extends Scope{
 
     public void addFunc(FuncDefNode func){
         if(funcDecls.containsKey(func.name)){
+            System.out.println("Multiple Definitions");
             throw new semanticError("Duplicate function name: "+func.name,func.pos);
         }
         if(vars.containsKey(func.name)){
+            System.out.println("Multiple Definitions");
             throw new semanticError("Duplicate function name with function: "+func.name,func.pos);
         }
         if(classDecls.containsKey(func.name)){
+            System.out.println("Multiple Definitions");
             throw new semanticError("Duplicate function name with class:  "+func.name,func.pos);
         }
         funcDecls.put(func.name,new FuncDecl(func));
@@ -85,6 +90,7 @@ public class globalScope extends Scope{
 
     public void addClass(ClassDefNode clas){
         if(classDecls.containsKey(clas.name)||funcDecls.containsKey(clas.name)){//类名和函数名不允许重复
+            System.out.println("Multiple Definitions");
             throw new semanticError("Duplicate class name: "+clas.name,clas.pos);
         }
         classDecls.put(clas.name,new ClassDecl(clas));
