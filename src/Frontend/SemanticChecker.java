@@ -231,7 +231,8 @@ public class SemanticChecker implements ASTVisitor {
     public void visit(ArrayExprNode it){
         it.array.accept(this);
         it.index.accept(this);
-        if(!it.index.type.isInt){
+//        System.err.println(it.index.type.toString());
+        if(!(it.index.type.isInt&&it.index.type.dim==0)){
             throw new semanticError("Array index not int",it.pos);
         }
         if(it.array.type.dim==0){
