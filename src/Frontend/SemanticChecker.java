@@ -352,7 +352,7 @@ public class SemanticChecker implements ASTVisitor {
                 throw new semanticError("class operation wrong",it.pos);
             }
         }
-        //int
+        //int null
         if(it.opCode.equals("==")||it.opCode.equals("!=")||it.opCode.equals("<")||it.opCode.equals(">")||it.opCode.equals("<=")||it.opCode.equals(">=")){
             it.type=new exprType("bool",0);
         }else{
