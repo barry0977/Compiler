@@ -7,6 +7,7 @@ import AST.Expr.BasicExpr.ArrayConstNode;
 import AST.Expr.BasicExpr.BasicExprNode;
 import AST.ProgramNode;
 import AST.Stmt.*;
+import AST.Type.Type;
 import Util.Decl.*;
 import Util.scope.*;
 
@@ -56,6 +57,7 @@ public class SymbolCollector implements ASTVisitor {
             it.scope.addVar(args.second,args.first,it.pos);
             it.scope.params.put(args.second,args.first);
         }
+        it.scope.returnType=new Type(it.returntype);
         curScope=it.scope.getParent();
     }
     //全局变量和局部变量不支持前向引用，不用加进去

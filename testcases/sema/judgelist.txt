@@ -191,3 +191,13 @@ ternary-package/ternary-expression-2.mx
 ternary-package/ternary-expression-3.mx
 ternary-package/ternary-expression-4.mx
 ternary-package/ternary-expression-5.mx
+const-array-package/const-array1.mx
+const-array-package/const-array2.mx
+const-array-package/const-array3.mx
+const-array-package/const-array4.mx
+const-array-package/const-array5.mx
+formatted-string-package/formatted-string1.mx
+formatted-string-package/formatted-string2.mx
+formatted-string-package/formatted-string3.mx
+formatted-string-package/formatted-string4.mx
+formatted-string-package/formatted-string5.mx

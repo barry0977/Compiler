@@ -8,7 +8,7 @@ import Util.Position;
 import java.util.ArrayList;
 import Util.Pair;
 
-public class VarDefNode extends ASTNode {
+public class VarDefNode extends DefNode {
     public Type vartype;
     public ArrayList<Pair<String, ExprNode>> vars;
 

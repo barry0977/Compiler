@@ -42,8 +42,8 @@ statement
 
 
 expression
-    :New type ('('')')? #newVarExpr
-    |New type ('['expression?']')+ constArray? #newArrayExpr
+    :New type ('['expression?']')+ constArray? #newArrayExpr
+    |New type ('('')')? #newVarExpr
     |expression '('(expression (',' expression)*)? ')' #funcExpr
     |expression '[' expression ']' #arrayExpr
     |expression op=Fullstop Identifier #memberExpr

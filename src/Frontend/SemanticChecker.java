@@ -67,7 +67,7 @@ public class SemanticChecker implements ASTVisitor {
                 stmt.accept(this);
             }
         }
-        if(!((funcScope)curScope).isReturned&&!it.returntype.equals(new Type("void",0))){//如果没有Return语句并且函数返回值不是void
+        if(!((funcScope)curScope).isReturned&&!it.returntype.equals(new Type("void",0))&&!it.name.equals("main")){//如果没有Return语句并且函数返回值不是void(main函数可以没有返回值)
             System.out.println("Missing Return Statement");
             throw new semanticError("non-void function has no Return Statement",it.pos);
         }
@@ -83,10 +83,8 @@ public class SemanticChecker implements ASTVisitor {
         }
         for(var x:it.vars){
             curScope.addVar(x.first,it.vartype,it.pos);
-//            System.err.println(it.vartype.toString());
             if(x.second!=null){
                 x.second.accept(this);
-//                System.err.println(x.second.type.toString());
                 if(!x.second.type.equals(it.vartype)){
                     throw new semanticError("initial type mismatch",it.pos);
                 }
@@ -231,10 +229,8 @@ public class SemanticChecker implements ASTVisitor {
     public void visit(EmptyStmtNode it){}
 
     public void visit(ArrayExprNode it){
-        System.err.println("enter ArrayExpr ");
         it.array.accept(this);
         it.index.accept(this);
-        System.out.println(it.array.type.dim);
         if(!it.index.type.isInt){
             throw new semanticError("Array index not int",it.pos);
         }
@@ -284,16 +280,17 @@ public class SemanticChecker implements ASTVisitor {
             it.type=new exprType(inclass,0);
             it.isLeftValue=false;
         }else if(it.isIdentifier){
-            exprType idtype=curScope.getIdentifier(it.name);
-            if(idtype==null){
+            it.type=curScope.getIdentifier(it.name);
+            if(it.type==null){
                 throw new semanticError("Variable "+it.name+" not found",it.pos);
             }
-            it.type=new exprType(idtype);
-            if(idtype.isFunc){
+            if(it.type.isFunc){
                 it.isLeftValue=false;
             }else{
                 it.isLeftValue=true;
             }
+        }else{
+            System.err.println("Unknown expression type");
         }
     }
 
@@ -392,7 +389,7 @@ public class SemanticChecker implements ASTVisitor {
             if (!it.member.equals("size")) {
                 throw new semanticError("member function for array is not size()", it.pos);
             } else {
-                it.type = new exprType("size", new FuncDecl("size", new Type("int", 0), "", "", false));
+                it.type = new exprType("size", new FuncDecl("size", new Type("int", 0), "", "", 0));
                 it.isLeftValue = false;
                 return;
             }

@@ -11,6 +11,12 @@ public class exprType extends Type {
         super(type);
     }
 
+    public exprType(exprType type){
+        super(type);
+        this.isFunc=type.isFunc;
+        this.funcinfo=type.funcinfo;
+    }
+
     public exprType(String name,int dim){
         super(name,dim);
     }
