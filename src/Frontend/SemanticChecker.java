@@ -197,10 +197,12 @@ public class SemanticChecker implements ASTVisitor {
         if(it.returnExpr!=null){
             it.returnExpr.accept(this);
             if(!it.returnExpr.type.equals(curScope.getReturnType())){//返回表达式的类型与函数返回类型不符
+                System.out.println("Type Mismatch");
                 throw new semanticError("Return type mismatch",it.pos);
             }
         }else{
             if(!curScope.getReturnType().equals(new Type("void",0))){//如果函数返回类型不是void，则报错
+                System.out.println("Type Mismatch");
                 throw new semanticError("Return type mismatch",it.pos);
             }
         }
@@ -243,6 +245,7 @@ public class SemanticChecker implements ASTVisitor {
         it.lhs.accept(this);
         it.rhs.accept(this);
         if(!it.lhs.isLeftValue){
+            System.out.println("Type Mismatch");
             throw new semanticError("lhs not left value",it.pos);
         }
         //注意如果右表达式为null的情况
@@ -250,6 +253,7 @@ public class SemanticChecker implements ASTVisitor {
 //
 //        }
         if(!it.lhs.type.equals(it.rhs.type)){
+            System.out.println("Type Mismatch");
             throw new semanticError("assign type mismatch",it.pos);
         }
         it.type=new exprType(it.rhs.type);
@@ -279,6 +283,7 @@ public class SemanticChecker implements ASTVisitor {
         }else if(it.isIdentifier){
             it.type=curScope.getIdentifier(it.name);
             if(it.type==null){
+                System.out.println("Undefined Identifier");
                 throw new semanticError("Variable "+it.name+" not found",it.pos);
             }
             if(it.type.isFunc){
@@ -296,6 +301,7 @@ public class SemanticChecker implements ASTVisitor {
         it.rhs.accept(this);
 
         if(!it.lhs.type.equals(it.rhs.type)){//左右表达式类型不同
+            System.out.println("Type Mismatch");
             throw new semanticError("lhs and rhs type mismatch",it.pos);
         }
 
@@ -305,6 +311,7 @@ public class SemanticChecker implements ASTVisitor {
                 it.isLeftValue=false;
                 return;
             }else{
+                System.out.println("Invalid Type");
                 throw new semanticError("bool operation wrong",it.pos);
             }
         }
@@ -315,6 +322,7 @@ public class SemanticChecker implements ASTVisitor {
                 it.isLeftValue=false;
                 return;
             }else{
+                System.out.println("Invalid Type");
                 throw new semanticError("array operation wrong",it.pos);
             }
         }
@@ -329,16 +337,31 @@ public class SemanticChecker implements ASTVisitor {
                 it.isLeftValue=false;
                 return;
             }else{
+                System.out.println("Invalid Type");
                 throw new semanticError("string operation wrong",it.pos);
             }
         }
         //int
-        if(it.opCode.equals("==")||it.opCode.equals("!=")||it.opCode.equals("<")||it.opCode.equals(">")||it.opCode.equals("<=")||it.opCode.equals(">=")){
-            it.type=new exprType("bool",0);
-        }else{
-            it.type=new exprType("int",0);
+        if(it.lhs.type.isInt){
+            if(it.opCode.equals("==")||it.opCode.equals("!=")||it.opCode.equals("<")||it.opCode.equals(">")||it.opCode.equals("<=")||it.opCode.equals(">=")){
+                it.type=new exprType("bool",0);
+            }else{
+                it.type=new exprType("int",0);
+            }
+            it.isLeftValue=false;
+            return;
         }
-        it.isLeftValue=false;
+        //class
+        if(it.lhs.type.isClass){
+            if(it.opCode.equals("==")||it.opCode.equals("!=")){
+                it.type=new exprType("bool",0);
+                it.isLeftValue=false;
+                return;
+            }else{
+                System.out.println("Invalid Type");
+                throw new semanticError("class operation wrong",it.pos);
+            }
+        }
     }
 
     public void visit(ConditionExprNode it){
