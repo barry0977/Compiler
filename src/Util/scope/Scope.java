@@ -69,7 +69,7 @@ public class Scope {
             if(((classScope) this).funcs.containsKey(name)){
                 return (((classScope) this).funcs.get(name));
             }else if(parent!=null && lookUpon) {
-                return ((classScope) parent).getFunc(name, lookUpon);
+                return parent.getFunc(name, lookUpon);
             }else{
                 return null;
             }
