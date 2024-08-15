@@ -15,7 +15,6 @@ import Util.error.Error;
 public class Main {
     public static void main(String[] args) throws Exception{
         var input = CharStreams.fromStream(System.in);
-        System.err.println("hello world");
         try {
             ProgramNode ASTRoot;
             globalScope gScope = new globalScope(null);

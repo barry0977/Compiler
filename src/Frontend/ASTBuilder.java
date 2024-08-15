@@ -14,6 +14,7 @@ import AST.ASTNode;
 import Util.Pair;
 import Util.Position;
 import Util.error.Error;
+import Util.error.semanticError;
 import Util.error.syntaxError;
 
 public class ASTBuilder extends MxBaseVisitor<ASTNode> {
@@ -261,9 +262,19 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
         return parenExprNode;
     }
 
-    //还没处理好
     @Override public ASTNode visitBasicExpr(MxParser.BasicExprContext ctx) {
-        return new BasicExprNode(new Position(ctx));
+        if(ctx.primary().Identifier()!=null){
+            BasicExprNode basicExprNode=new BasicExprNode(new Position(ctx));
+            basicExprNode.isIdentifier=true;
+            basicExprNode.name=ctx.primary().Identifier().getText();
+            return basicExprNode;
+        }else if(ctx.primary().This()!= null){
+            BasicExprNode basicExprNode=new BasicExprNode(new Position(ctx));
+            basicExprNode.isThis=true;
+            return basicExprNode;
+        }else{
+            return visit(ctx.primary().const_());
+        }
     }
 
     @Override public ASTNode visitUnaryExpr(MxParser.UnaryExprContext ctx){
@@ -291,8 +302,14 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
     @Override public ASTNode visitNewArrayExpr(MxParser.NewArrayExprContext ctx) {
         NewArrayExprNode newArrayExprNode=new NewArrayExprNode(new Position(ctx));
         newArrayExprNode.type=new exprType(ctx.type());
-        for(var length:ctx.expression()){
-            newArrayExprNode.sizelist.add((ExprNode) visit(length));
+        newArrayExprNode.type.dim=ctx.LeftBracket().size();
+        //设定的长度必须连续出现在前面的[]中
+        for(int i=0;i<ctx.expression().size();i++){
+            if(ctx.expression(i).getStart().getTokenIndex()<ctx.LeftBracket(i).getSymbol().getTokenIndex()||ctx.expression(i).getStart().getTokenIndex()>ctx.RightBracket(i).getSymbol().getTokenIndex()){
+                System.out.println("Invalid Identifier");
+                throw new semanticError("new array error",new Position(ctx));
+            }
+            newArrayExprNode.sizelist.add((ExprNode) visit(ctx.expression(i)));
         }
         if(ctx.constArray()==null){
             newArrayExprNode.init=null;

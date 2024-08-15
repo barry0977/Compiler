@@ -68,13 +68,13 @@ public class SemanticChecker implements ASTVisitor {
             }
         }
         if(!((funcScope)curScope).isReturned&&!it.returntype.equals(new Type("void",0))){//如果没有Return语句并且函数返回值不是void
+            System.out.println("Missing Return Statement");
             throw new semanticError("non-void function has no Return Statement",it.pos);
         }
         curScope=curScope.parent;
     }
 
     public void visit(VarDefNode it){
-        System.err.println("enter Vardef\n");
         if(it.vartype.isClass){//判断用的类是否定义过
             ClassDecl class_=gScope.classDecls.get(it.vartype.typeName);
             if(class_==null){
@@ -83,12 +83,10 @@ public class SemanticChecker implements ASTVisitor {
         }
         for(var x:it.vars){
             curScope.addVar(x.first,it.vartype,it.pos);
-            System.err.println(it.vartype.toString());
-            System.err.println('\n');
+//            System.err.println(it.vartype.toString());
             if(x.second!=null){
                 x.second.accept(this);
-                System.err.println(x.second.type.toString());
-                System.err.println('\n');
+//                System.err.println(x.second.type.toString());
                 if(!x.second.type.equals(it.vartype)){
                     throw new semanticError("initial type mismatch",it.pos);
                 }
@@ -181,12 +179,14 @@ public class SemanticChecker implements ASTVisitor {
 
     public void visit(BreakStmtNode it){
         if(curScope.stype!= Scope.scopeType.loopscope){
+            System.out.println("Invalid Control Flow");
             throw new semanticError("Break not in loop",it.pos);
         }
     }
 
     public void visit(ContinueStmtNode it){
         if(curScope.stype!= Scope.scopeType.loopscope){
+            System.out.println("Invalid Control Flow");
             throw new semanticError("Continue not in loop",it.pos);
         }
     }
@@ -231,8 +231,10 @@ public class SemanticChecker implements ASTVisitor {
     public void visit(EmptyStmtNode it){}
 
     public void visit(ArrayExprNode it){
+        System.err.println("enter ArrayExpr ");
         it.array.accept(this);
         it.index.accept(this);
+        System.out.println(it.array.type.dim);
         if(!it.index.type.isInt){
             throw new semanticError("Array index not int",it.pos);
         }
@@ -427,32 +429,32 @@ public class SemanticChecker implements ASTVisitor {
                 throw new semanticError("class not found",it.pos);
             }
         }
+        //确认每个size都是int
         for(var len:it.sizelist){
-            if(len.type==null){
-                System.err.println("7\n");
-            }else{
-                System.err.println("8\n");
-            }
             if(!len.type.isInt){
                 throw new semanticError("array size not int",it.pos);
             }
         }
-        if(it.init.type.isNull){//如果初始值为null
-            if(it.type.dim<it.init.type.dim){
-                throw new semanticError("array dim out of range",it.pos);
-            }else{
-                it.type=new exprType(it.init.type);
-                it.isLeftValue=false;
-            }
-        }else{//需要判断
-            if(!it.type.equals(it.init.type)){
-                throw new semanticError("array type mismatch",it.pos);
-            }else{
-                it.type=new exprType(it.init.type);
-                it.isLeftValue=false;
+        //如果有初始值
+        if(it.init!=null){
+            if(it.init.type.isNull){//如果初始值为null
+                System.err.println("isnull");
+                if(it.type.dim<it.init.type.dim){
+                    throw new semanticError("array dim out of range",it.pos);
+                }else{
+                    it.type=new exprType(it.init.type);
+                    it.isLeftValue=false;
+                }
+            }else{//需要判断
+                System.err.println("not null");
+                if(!it.type.equals(it.init.type)){
+                    throw new semanticError("array type mismatch",it.pos);
+                }else{
+                    it.type=new exprType(it.init.type);
+                    it.isLeftValue=false;
+                }
             }
         }
-
     }
 
     public void visit(NewVarExprNode it){

@@ -39,8 +39,6 @@ public class Type {
 
     public Type(MxParser.TypeContext ctx){
         String type=ctx.typename().getText();
-        int dim=ctx.LeftBracket().size();
-
         if(type.equals("int")){
             this.isInt = true;
         }else if(type.equals("bool")){
@@ -55,7 +53,7 @@ public class Type {
             this.isClass = true;
             this.typeName = type;
         }
-        this.dim=dim;
+        this.dim=ctx.LeftBracket().size();
     }
 
     //数组和类可与常量null进行比较
