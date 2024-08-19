@@ -161,10 +161,8 @@ public class SemanticChecker implements ASTVisitor {
         if(it.nextstep!=null){
             it.nextstep.accept(this);
         }
-        if(it.body!=null){//for语句中可能引入新定义，不管后面是block还是pureexpr都要开新作用域
-            curScope=new Scope(curScope);
+        if(it.body!=null){
             it.body.accept(this);
-            curScope=curScope.parent;
         }
         curScope=curScope.parent;
     }
