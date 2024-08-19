@@ -13,7 +13,6 @@ import Parser.MxParser;
 import AST.ASTNode;
 import Util.Pair;
 import Util.Position;
-import Util.error.Error;
 import Util.error.semanticError;
 import Util.error.syntaxError;
 

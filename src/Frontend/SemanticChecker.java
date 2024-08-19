@@ -1,6 +1,5 @@
 package Frontend;
 
-import AST.ASTNode;
 import AST.ASTVisitor;
 import AST.Def.*;
 import AST.Expr.*;
@@ -12,7 +11,6 @@ import AST.Type.Type;
 import AST.Type.exprType;
 import Util.Decl.ClassDecl;
 import Util.Decl.FuncDecl;
-import Util.Pair;
 import Util.error.*;
 import Util.scope.*;
 
@@ -59,7 +57,6 @@ public class SemanticChecker implements ASTVisitor {
         curScope=curScope.parent;
     }
 
-    //还没处理好
     public void visit(FuncDefNode it){
         curScope=it.scope;
         for(var stmt:it.body){
@@ -164,8 +161,10 @@ public class SemanticChecker implements ASTVisitor {
         if(it.nextstep!=null){
             it.nextstep.accept(this);
         }
-        if(it.body!=null){
+        if(it.body!=null){//for语句中可能引入新定义，不管后面是block还是pureexpr都要开新作用域
+            curScope=new Scope(curScope);
             it.body.accept(this);
+            curScope=curScope.parent;
         }
         curScope=curScope.parent;
     }
@@ -192,7 +191,6 @@ public class SemanticChecker implements ASTVisitor {
         if(!curScope.inFunc()){
             throw new semanticError("Return not in Function",it.pos);
         }
-//        ((funcScope) curScope).isReturned=true;
         curScope.setReturn();
         if(it.returnExpr!=null){
             it.returnExpr.accept(this);
@@ -390,7 +388,6 @@ public class SemanticChecker implements ASTVisitor {
         }else if(it.func instanceof MemberExprNode){//如果是成员函数，则之前MemberExpr已经确定
             func=it.func.type.funcinfo;
         }
-//        FuncDecl func=curScope.getFunc(it.func.type.funcinfo.name,true);//从scope中去找函数，找不到就往上一层
         if(func==null){
             System.out.println("Undefined Identifier");
             throw new semanticError("Func does not exist: "+it.func.type.funcinfo.name,it.pos);

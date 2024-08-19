@@ -1,0 +1,12 @@
+/*
+Test Package: Sema_Local_Preview
+Test Target: Loop
+Author: Admin
+Time: 2019-11-11
+Verdict: Success
+Comment: Condition should be bool
+Origin Package: Semantic Pretest
+*/
+int main(){
+for(int a=1;;) bool a;
+}
