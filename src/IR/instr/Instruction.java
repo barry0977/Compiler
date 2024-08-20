@@ -1,4 +1,5 @@
 package IR.instr;
 
-public class Instruction {
+abstract public class Instruction {
+    abstract public String toString();
 }
