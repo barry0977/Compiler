@@ -15,11 +15,14 @@ public class Scope {
     public HashMap<String, Type> vars;//只存了变量
     public scopeType stype;//
     public Scope parent;
+    public int depth=0;//在第几层scope
+    public int order=0;
 
     public Scope(Scope parent) {
         this.parent = parent;
         this.vars = new HashMap<>();
         this.stype = scopeType.blockscope;
+        this.depth=parent.depth+1;
     }
 
     public Scope getParent(){

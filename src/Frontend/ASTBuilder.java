@@ -356,18 +356,22 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
         BasicExprNode basicExprNode=new BasicExprNode(new Position(ctx));
         if(ctx.True()!= null){
             basicExprNode.isTrue=true;
+            basicExprNode.value="1";
             return basicExprNode;
         }else if(ctx.False()!= null){
             basicExprNode.isFalse=true;
+            basicExprNode.value="0";
             return basicExprNode;
         }else if(ctx.Null()!= null){
             basicExprNode.isNull=true;
             return basicExprNode;
         }else if(ctx.DecimalInteger()!= null){
             basicExprNode.isInt=true;
+            basicExprNode.value=ctx.DecimalInteger().getText();
             return basicExprNode;
         }else if(ctx.ConstString()!=null){
             basicExprNode.isString=true;
+            basicExprNode.value=ctx.ConstString().getText();
             return basicExprNode;
         }else{//数组常量
             return visit(ctx.constArray());

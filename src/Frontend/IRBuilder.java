@@ -7,18 +7,72 @@ import AST.Expr.BasicExpr.ArrayConstNode;
 import AST.Expr.BasicExpr.BasicExprNode;
 import AST.ProgramNode;
 import AST.Stmt.*;
+import IR.IRBlock;
+import IR.module.*;
+import IR.IRProgram;
+import IR.type.IRType;
+import Util.scope.*;
 
 public class IRBuilder implements ASTVisitor {
+    IRProgram program;
+    globalScope gScope;
+    Scope curScope;
+    IRBlock curBlock;
+    IRBlock curEntry;//如果是函数，则有entry块
+
+    public IRBuilder(IRProgram program, globalScope gscope) {
+        this.program = program;
+        this.gScope = gscope;
+        this.curScope = gscope;
+    }
+
     public void visit(ProgramNode it){
+        for(var def:it.defNodes){
+            def.accept(this);
+        }
     }
 
     public void visit(ClassDefNode it){
+        curScope=it.scope;
+        IRClassDef classDef = new IRClassDef();
+        classDef.name=it.name;
+        for(var mem:it.vars){
+            classDef.members.add(new IRType(mem.vartype));
+        }
+        for(var func:it.funcs){
+            func.accept(this);
+        }
+        curScope=curScope.parent;
     }
 
     public void visit(FuncDefNode it){
+        curScope=it.scope;
+        if(curScope instanceof globalScope){//全局函数
+            IRFuncDef funcDef=new IRFuncDef();
+            funcDef.name=it.name;
+
+            for(var stmt:it.body){
+                stmt.accept(this);
+            }
+        }else{//类方法，名字修改，参数要加上this
+            IRFuncDef funcDef=new IRFuncDef();
+            funcDef.name=((classScope) curScope.parent).classname+"::"+it.name;//名字前加上类名
+            for(var stmt:it.body){
+                stmt.accept(this);
+            }
+        }
+        curScope=curScope.parent;
     }
 
     public void visit(VarDefNode it){
+        if(curScope instanceof globalScope){//全局变量
+            IRGlobalVarDef newvar = new IRGlobalVarDef();
+            newvar.name=it.name;
+            newvar.type=new IRType(it.vartype);
+
+        }else{//局部变量
+
+        }
     }
 
     public void visit(ConstructNode it){
@@ -37,6 +91,7 @@ public class IRBuilder implements ASTVisitor {
     }
 
     public void visit(BreakStmtNode it){
+
     }
 
     public void visit(ContinueStmtNode it){
@@ -68,6 +123,9 @@ public class IRBuilder implements ASTVisitor {
     }
 
     public void visit(BinaryExprNode it){
+        it.lhs.accept(this);
+        it.rhs.accept(this);
+
     }
 
     public void visit(ConditionExprNode it){
