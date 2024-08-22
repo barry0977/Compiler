@@ -5,6 +5,8 @@ public class Br extends Instruction {
     public String dest;
     public boolean haveCondition=false;//是否是条件分支
 
+    public Br() {}
+
     @Override
     public String toString(){
         if(haveCondition){

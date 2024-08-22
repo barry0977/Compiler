@@ -4,6 +4,8 @@ public class Ret extends Instruction{
     public String type;
     public String value;
 
+    public Ret(){}
+
     @Override
     public String toString() {
         if(type.equals("void")){

@@ -16,13 +16,15 @@ public class Scope {
     public scopeType stype;//
     public Scope parent;
     public int depth=0;//在第几层scope
-    public int order=0;
+    public int order=0;//同一层中目前在第几个scope
+    public int num=0;
 
     public Scope(Scope parent) {
         this.parent = parent;
         this.vars = new HashMap<>();
         this.stype = scopeType.blockscope;
         this.depth=parent.depth+1;
+        this.order=++parent.num;
     }
 
     public Scope getParent(){

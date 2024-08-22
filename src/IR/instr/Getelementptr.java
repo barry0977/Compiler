@@ -7,6 +7,11 @@ public class Getelementptr extends Instruction{
     public ArrayList<String>types;
     public ArrayList<String>idx;
 
+    public Getelementptr(){
+        types=new ArrayList<>();
+        idx=new ArrayList<>();
+    }
+
     @Override
     public String toString() {
         String res=result+" = getelementptr "+type+", ptr "+pointer;

@@ -13,6 +13,10 @@ public class IRBlock {
         statements = new ArrayList<>();
     }
 
+    public void addIns(Instruction ins) {
+        statements.add(ins);
+    }
+
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(label).append(":\n");

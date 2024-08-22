@@ -17,6 +17,10 @@ public class IRType {
         }
     }
 
+    public IRType(String typename) {
+        this.typename = typename;
+    }
+
     public String toString() {
         return typename;
     }

@@ -6,6 +6,14 @@ public class Binary extends Instruction {
     public String result;
     public Boolean isInt=false,isBool=false;
 
+    public Binary(){}
+
+    public Binary(String lhs, String rhs, String result) {
+        this.lhs = lhs;
+        this.rhs = rhs;
+        this.result = result;
+    }
+
     public void setOp(String obj){
         switch (obj) {
             case "+" -> op = "add";

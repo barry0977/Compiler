@@ -8,6 +8,7 @@ import AST.Expr.BasicExpr.BasicExprNode;
 import AST.ProgramNode;
 import AST.Stmt.*;
 import IR.IRBlock;
+import IR.instr.Alloca;
 import IR.module.*;
 import IR.IRProgram;
 import IR.type.IRType;
@@ -47,29 +48,36 @@ public class IRBuilder implements ASTVisitor {
 
     public void visit(FuncDefNode it){
         curScope=it.scope;
+        IRFuncDef funcDef=new IRFuncDef();
         if(curScope instanceof globalScope){//全局函数
-            IRFuncDef funcDef=new IRFuncDef();
             funcDef.name=it.name;
-
-            for(var stmt:it.body){
-                stmt.accept(this);
-            }
         }else{//类方法，名字修改，参数要加上this
-            IRFuncDef funcDef=new IRFuncDef();
             funcDef.name=((classScope) curScope.parent).classname+"::"+it.name;//名字前加上类名
-            for(var stmt:it.body){
-                stmt.accept(this);
-            }
+            funcDef.paramnames.add("%this");
+            funcDef.paramtypes.add(new IRType("ptr"));
+            Alloca ins=new Alloca("%this.addr","ptr");
+            funcDef.entry.addIns(ins);
+        }
+        for(var args:it.paraslist.Paralist){//加入参数列表
+            funcDef.paramnames.add("%"+args.second);
+            funcDef.paramtypes.add(new IRType(args.first));
+            Alloca ins=new Alloca();
+            ins.result="%"+args.second+".addr";//参数指针名字加上addr
+            ins.type=new IRType(args.first).toString();//这里alloca的类应该都是ptr
+            funcDef.entry.addIns(ins);
+        }
+        funcDef.returntype=new IRType(it.returntype);
+        for(var stmt:it.body){
+            stmt.accept(this);
         }
         curScope=curScope.parent;
     }
 
     public void visit(VarDefNode it){
         if(curScope instanceof globalScope){//全局变量
-            IRGlobalVarDef newvar = new IRGlobalVarDef();
-            newvar.name=it.name;
-            newvar.type=new IRType(it.vartype);
+            for(var variable:it.vars){
 
+            }
         }else{//局部变量
 
         }
