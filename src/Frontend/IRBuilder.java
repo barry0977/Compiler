@@ -8,9 +8,10 @@ import AST.Expr.BasicExpr.BasicExprNode;
 import AST.ProgramNode;
 import AST.Stmt.*;
 import IR.IRBlock;
-import IR.instr.Alloca;
+import IR.instr.*;
 import IR.module.*;
 import IR.IRProgram;
+import IR.type.ExprResult;
 import IR.type.IRType;
 import Util.scope.*;
 
@@ -19,7 +20,8 @@ public class IRBuilder implements ASTVisitor {
     globalScope gScope;
     Scope curScope;
     IRBlock curBlock;
-    IRBlock curEntry;//如果是函数，则有entry块
+    ExprResult lastExpr;//最后一次运算出的结果
+    IRFuncDef curFunc;
 
     public IRBuilder(IRProgram program, globalScope gscope) {
         this.program = program;
@@ -55,18 +57,26 @@ public class IRBuilder implements ASTVisitor {
             funcDef.name=((classScope) curScope.parent).classname+"::"+it.name;//名字前加上类名
             funcDef.paramnames.add("%this");
             funcDef.paramtypes.add(new IRType("ptr"));
-            Alloca ins=new Alloca("%this.addr","ptr");
-            funcDef.entry.addIns(ins);
+            Alloca ins1=new Alloca("%this.addr","ptr");
+            funcDef.entry.addIns(ins1);
+            Store ins2=new Store("ptr","%this","%this.addr");
+            funcDef.entry.addIns(ins2);
         }
         for(var args:it.paraslist.Paralist){//加入参数列表
             funcDef.paramnames.add("%"+args.second);
             funcDef.paramtypes.add(new IRType(args.first));
-            Alloca ins=new Alloca();
-            ins.result="%"+args.second+".addr";//参数指针名字加上addr
-            ins.type=new IRType(args.first).toString();//这里alloca的类应该都是ptr
-            funcDef.entry.addIns(ins);
+            Alloca ins1=new Alloca();
+            ins1.result="%"+args.second+".addr";//参数指针名字加上addr
+            ins1.type=new IRType(args.first).toString();//这里alloca的类应该都是ptr
+            funcDef.entry.addIns(ins1);
+            Store ins2=new Store();
+            ins2.type=new IRType(args.first).toString();
+            ins2.value="%"+args.second;
+            ins2.pointer="%"+args.second+".addr";
+            funcDef.entry.addIns(ins2);
         }
         funcDef.returntype=new IRType(it.returntype);
+        this.curFunc=funcDef;
         for(var stmt:it.body){
             stmt.accept(this);
         }
@@ -76,10 +86,38 @@ public class IRBuilder implements ASTVisitor {
     public void visit(VarDefNode it){
         if(curScope instanceof globalScope){//全局变量
             for(var variable:it.vars){
-
+                if(variable.second==null){//没有初始值
+                    IRGlobalVarDef gvar=new IRGlobalVarDef(variable.first,new IRType(it.vartype),"null");
+                    program.globalvars.put(variable.first,gvar);
+                    continue;
+                }else{
+                    if(variable.second instanceof BasicExprNode && (((BasicExprNode) variable.second).isInt||((BasicExprNode) variable.second).isFalse||((BasicExprNode) variable.second).isTrue||((BasicExprNode) variable.second).isNull)){
+                        IRGlobalVarDef gvar=new IRGlobalVarDef(variable.first,new IRType(it.vartype),((BasicExprNode) variable.second).value);
+                        program.globalvars.put(variable.first,gvar);
+                        continue;
+                    }else{
+                        IRGlobalVarDef gvar=new IRGlobalVarDef(variable.first,null,"null");
+                        program.globalvars.put(variable.first,gvar);
+                        if(!program.funcs.containsKey("_init")){
+                            program.funcs.put("_init",new IRFuncDef("_init","void"));
+                        }
+                        var tmp=program.funcs.get("_init");
+                        variable.second.accept(this);
+                        //TODO
+                        //在init函数中初始化
+                    }
+                }
             }
         }else{//局部变量
-
+            for(var variable:it.vars){
+                Alloca ins=new Alloca();
+                ins.result="%"+variable.first+"."+curScope.depth+"."+curScope.order;
+                ins.type=new IRType(it.vartype).toString();
+                if(variable.second!=null){
+                    variable.second.accept(this);
+                    //TODO
+                }
+            }
         }
     }
 
@@ -131,8 +169,25 @@ public class IRBuilder implements ASTVisitor {
     }
 
     public void visit(BinaryExprNode it){
-        it.lhs.accept(this);
+        it.lhs.accept(this);//左操作数必须要执行
+        ExprResult lhsvalue=lastExpr;
+        if(it.opCode.equals("&&")||it.opCode.equals("||")){
+            int ord=curScope.cnt++;//每次需要短路求值就增加这个cnt，防止block名字重复
+            Icmp
+            Br ins1=new Br();
+            ins1.haveCondition=true;
+            ins1.cond=lhsvalue.temp;
+            ins1.iftrue=
+            curBlock=curFunc.addBlock(new IRBlock("logic.rhs."+ord));//还需要执行右操作数
+
+            IRBlock toend=new IRBlock("logic.end."+ord);
+            it.rhs.accept(this);
+            ExprResult rhsvalue=lastExpr;
+            return;
+        }
         it.rhs.accept(this);
+        ExprResult rhsvalue=lastExpr;
+
 
     }
 

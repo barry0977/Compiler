@@ -11,6 +11,7 @@ public class IRFuncDef {
     public ArrayList<IRType> paramtypes;//参数类型
     public ArrayList<String> paramnames;//参数名
     public IRBlock entry;
+    public int cnt=0;//用于一个函数中的匿名函数的命名
     public ArrayList<IRBlock> body;
 
     public IRFuncDef(){
@@ -18,6 +19,20 @@ public class IRFuncDef {
         body=new ArrayList<>();
         paramtypes=new ArrayList<>();
         paramnames=new ArrayList<>();
+    }
+
+    public IRFuncDef(String name,String type){
+        this.name=name;
+        this.returntype=new IRType(type);
+        this.entry.label="entry";
+        body=new ArrayList<>();
+        paramtypes=new ArrayList<>();
+        paramnames=new ArrayList<>();
+    }
+
+    public IRBlock addBlock(IRBlock block){
+        body.add(block);
+        return block;
     }
 
     public String toString(){

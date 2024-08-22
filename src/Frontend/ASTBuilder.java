@@ -364,6 +364,7 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
             return basicExprNode;
         }else if(ctx.Null()!= null){
             basicExprNode.isNull=true;
+            basicExprNode.value="null";
             return basicExprNode;
         }else if(ctx.DecimalInteger()!= null){
             basicExprNode.isInt=true;
