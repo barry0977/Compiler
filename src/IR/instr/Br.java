@@ -7,6 +7,18 @@ public class Br extends Instruction {
 
     public Br() {}
 
+    public Br(String cond, String iftrue, String iffalse) {
+        this.cond = cond;
+        this.iftrue = iftrue;
+        this.iffalse = iffalse;
+        this.haveCondition=true;
+    }
+
+    public Br(String dest){
+        this.dest = dest;
+        this.haveCondition=false;
+    }
+
     @Override
     public String toString(){
         if(haveCondition){

@@ -10,10 +10,23 @@ public class Icmp extends Instruction{
 
     public Icmp(String result, String cond, String ty, String op1, String op2){
         this.result = result;
-        this.cond = cond;
+        this.cond = getOp(cond);
         this.ty = ty;
         this.op1 = op1;
         this.op2 = op2;
+    }
+
+    public String getOp(String op){
+        String res=null;
+        switch (op){
+            case ">" -> res = "sgt";
+            case ">=" -> res = "sge";
+            case "<" -> res = "slt";
+            case "<=" -> res = "sle";
+            case "==" -> res = "eq";
+            case "!=" -> res = "ne";
+        }
+        return res;
     }
 
     @Override

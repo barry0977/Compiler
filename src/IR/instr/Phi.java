@@ -33,7 +33,7 @@ public class Phi extends Instruction {
             }
             sb.append("[ ");
             sb.append(vals.get(i));
-            sb.append(", ");
+            sb.append(", %");
             sb.append(labels.get(i));
             sb.append(" ]");
         }

@@ -4,14 +4,16 @@ public class Binary extends Instruction {
     public String op;
     public String lhs,rhs;
     public String result;
-    public Boolean isInt=false,isBool=false;
+    public String ty;
 
     public Binary(){}
 
-    public Binary(String lhs, String rhs, String result) {
+    public Binary(String opCode,String ty,String lhs, String rhs, String result) {
+        this.ty=ty;
         this.lhs = lhs;
         this.rhs = rhs;
         this.result = result;
+        setOp(opCode);
     }
 
     public void setOp(String obj){
@@ -31,10 +33,6 @@ public class Binary extends Instruction {
 
     @Override
     public String toString(){
-        if(isInt){
-            return result+" = "+op+" i32 "+lhs+", "+rhs+"\n";
-        }else{
-            return result+" = "+op+" i1 "+lhs+", "+rhs+"\n";
-        }
+        return result+" = "+op+" "+ty+" "+lhs+", "+rhs+"\n";
     }
 }

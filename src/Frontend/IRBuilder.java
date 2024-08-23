@@ -173,22 +173,62 @@ public class IRBuilder implements ASTVisitor {
         ExprResult lhsvalue=lastExpr;
         if(it.opCode.equals("&&")||it.opCode.equals("||")){
             int ord=curScope.cnt++;//每次需要短路求值就增加这个cnt，防止block名字重复
-            Icmp
-            Br ins1=new Br();
-            ins1.haveCondition=true;
-            ins1.cond=lhsvalue.temp;
-            ins1.iftrue=
-            curBlock=curFunc.addBlock(new IRBlock("logic.rhs."+ord));//还需要执行右操作数
+            int suf=curFunc.cnt++;//同一个函数中匿名变量不能重复
+            curBlock.addIns(new Icmp("%"+suf,"ne","i1",lhsvalue.temp,"0"));//若为true，则说明左边为true
+            if(it.opCode.equals("&&")){//若左边是false，则不用看右边
+                curBlock.addIns(new Br("%"+suf,"logic.rhs."+ord,"logic.end."+ord));
+            }else{//若左边是true，则不用看右边
+                curBlock.addIns(new Br("%"+suf,"logic.end."+ord,"logic.rhs."+ord));
+            }
+            String ori=curBlock.label;//最开始块的label
 
-            IRBlock toend=new IRBlock("logic.end."+ord);
+            curBlock=curFunc.addBlock(new IRBlock("logic.rhs."+ord));//还需要执行右操作数
             it.rhs.accept(this);
             ExprResult rhsvalue=lastExpr;
+            suf=curFunc.cnt++;
+            curBlock.addIns(new Icmp("%"+suf,"ne","i1",rhsvalue.temp,"0"));
+
+            curBlock=curFunc.addBlock(new IRBlock("logic.end."+ord));
+            suf=curFunc.cnt++;
+            Phi phi=new Phi("%"+suf,"i1");
+            if(it.opCode.equals("&&")){
+                phi.vals.add("0");
+                phi.labels.add(ori);
+                phi.vals.add("%"+(suf-1));
+                phi.labels.add("logic.rhs."+ord);
+            }else{
+                phi.vals.add("1");
+                phi.labels.add(ori);
+                phi.vals.add("%"+(suf-1));
+                phi.labels.add("logic.rhs."+ord);
+            }
+            curBlock.addIns(phi);
+            lastExpr.temp="%"+suf;
+            lastExpr.isConst=false;
+            lastExpr.isPtr=false;
             return;
         }
+
         it.rhs.accept(this);
         ExprResult rhsvalue=lastExpr;
-
-
+        int name=curFunc.cnt++;
+        //TODO
+        //字符串相关的处理还没进行
+        if(it.opCode.equals("==")||it.opCode.equals("!=")||it.opCode.equals(">")||it.opCode.equals(">=")||it.opCode.equals("<")||it.opCode.equals("<=")){
+            String type=new IRType(it.lhs.type).toString();
+            Icmp obj=new Icmp("%"+name,it.opCode,type,lhsvalue.temp,rhsvalue.temp);
+            curBlock.addIns(obj);
+            lastExpr.isConst=false;
+            lastExpr.temp="%"+name;
+            lastExpr.isPtr=false;
+        }else{
+            String type=new IRType(it.lhs.type).toString();
+            Binary obj=new Binary(it.opCode,type, lhsvalue.temp,rhsvalue.temp,"%"+name);
+            curBlock.addIns(obj);
+            lastExpr.isConst=false;
+            lastExpr.temp="%"+name;
+            lastExpr.isPtr=false;
+        }
     }
 
     public void visit(ConditionExprNode it){
@@ -207,15 +247,52 @@ public class IRBuilder implements ASTVisitor {
     }
 
     public void visit(UnaryExprNode it){
+        it.expr.accept(this);
+        int name=curFunc.cnt++;
+        if(it.opCode.equals("!")){
+            curBlock.addIns(new Binary("^","i1",lastExpr.temp,"1","%"+name));
+        }else if(it.opCode.equals("~")){
+            curBlock.addIns(new Binary("^","i32",lastExpr.temp,"-1","%"+name));
+        }else if(it.opCode.equals("-")){
+            curBlock.addIns(new Binary("-","i32","0",lastExpr.temp,"%"+name));
+        }
+        lastExpr.isPtr=false;
+        lastExpr.temp="%"+name;
+        lastExpr.isConst=false;
     }
 
-    public void visit(PreExprNode it){
+    public void visit(PreExprNode it){//是左值，需要传个指针
+        it.expr.accept(this);
+        int name=curFunc.cnt++;
+        if(it.opCode.equals("++")){
+            curBlock.addIns(new Binary("+","i32",lastExpr.temp,"1","%"+name));
+        }else{
+            curBlock.addIns(new Binary("-","i32",lastExpr.temp,"1","%"+name));
+        }
+        curBlock.addIns(new Store("i32","%"+name,lastExpr.PtrName));
+        lastExpr.isPtr=true;
+        lastExpr.temp="%"+name;
+        lastExpr.isConst=false;
+        lastExpr.PtrName= lastExpr.PtrName;
+
     }
 
-    public void visit(SufExprNode it){
+    public void visit(SufExprNode it){//不是左值
+        it.expr.accept(this);
+        int name=curFunc.cnt++;
+        if(it.opCode.equals("++")){
+            curBlock.addIns(new Binary("+","i32",lastExpr.temp,"1","%"+name));
+        }else{
+            curBlock.addIns(new Binary("-","i32",lastExpr.temp,"1","%"+name));
+        }
+        curBlock.addIns(new Store("i32","%"+name,lastExpr.PtrName));
+        lastExpr.isPtr=false;
+        lastExpr.isConst=false;
+        lastExpr.temp=lastExpr.temp;
     }
 
     public void visit(ParenExprNode it){
+        it.expr.accept(this);
     }
 
     public void visit(FStringExprNode it){
