@@ -19,12 +19,24 @@ public class Icmp extends Instruction{
     public String getOp(String op){
         String res=null;
         switch (op){
-            case ">" -> res = "sgt";
-            case ">=" -> res = "sge";
-            case "<" -> res = "slt";
-            case "<=" -> res = "sle";
-            case "==" -> res = "eq";
-            case "!=" -> res = "ne";
+            case ">" :
+                res = "sgt";
+                break;
+            case ">=" :
+                res = "sge";
+                break;
+            case "<" :
+                res = "slt";
+                break;
+            case "<=" :
+                res = "sle";
+                break;
+            case "==" :
+                res = "eq";
+                break;
+            case "!=" :
+                res = "ne";
+                break;
         }
         return res;
     }

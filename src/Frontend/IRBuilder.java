@@ -128,6 +128,8 @@ public class IRBuilder implements ASTVisitor {
     }
 
     public void visit(IfStmtNode it){
+        it.condition.accept(this);
+
     }
 
     public void visit(WhileStmtNode it){
@@ -141,22 +143,33 @@ public class IRBuilder implements ASTVisitor {
     }
 
     public void visit(ContinueStmtNode it){
+
     }
 
     public void visit(PureExprStmtNode it){
+        it.expr.accept(this);
     }
 
     public void visit(ReturnStmtNode it){
+        if(it.returnExpr!=null){
+            it.returnExpr.accept(this);
+            String type=new IRType(it.returnExpr.type).toString();
+            curBlock.addIns(new Ret(type,lastExpr.temp));
+        }else{
+            curBlock.addIns(new Ret("void",null));
+        }
     }
 
     public void visit(BlockStmtNode it){
+
     }
 
     public void visit(VardefStmtNode it){
+        it.varDef.accept(this);
     }
 
     public void visit(EmptyStmtNode it){
-
+        return;
     }
 
     public void visit(ArrayExprNode it){

@@ -19,13 +19,19 @@ public class Scope {
     public int order=0;//同一层中目前在第几个scope
     public int num=0;//用于记录当前scope有几个孩子
     public int cnt=0;//用于短路求值的块的命名
+    public String looplabel;
 
-    public Scope(Scope parent) {
-        this.parent = parent;
+    public Scope(Scope parent_) {
+        this.parent = parent_;
         this.vars = new HashMap<>();
         this.stype = scopeType.blockscope;
-        this.depth=parent.depth+1;
-        this.order=++parent.num;
+        if(parent_!=null){
+            this.depth=parent_.depth+1;
+            this.order=++parent_.num;
+        }else{
+            this.depth=0;
+            this.order=0;
+        }
     }
 
     public Scope getParent(){

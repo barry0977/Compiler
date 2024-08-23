@@ -133,6 +133,8 @@ public class SemanticChecker implements ASTVisitor {
     }
 
     public void visit(WhileStmtNode it){
+        it.scope=new loopScope(curScope);
+        curScope=it.scope;
         if(it.condition!=null){
             it.condition.accept(this);
             if(!it.condition.type.equals(new Type("bool",0))){
@@ -141,13 +143,21 @@ public class SemanticChecker implements ASTVisitor {
             }
         }
         if(it.body!=null){
-            curScope=new Scope(curScope);
+            if(it.body instanceof BlockStmtNode){
+                ((BlockStmtNode) it.body).scope=curScope;
+                for(var stmt:((BlockStmtNode) it.body).statements){
+                    stmt.accept(this);
+                }
+            }else{
+                it.body.accept(this);
+            }
         }
         curScope=curScope.parent;
     }
 
     public void visit(ForStmtNode it){
-        curScope=new loopScope(curScope);
+        it.scope=new loopScope(curScope);
+        curScope=it.scope;
         if(it.initStmt!=null){
             it.initStmt.accept(this);
         }
@@ -162,7 +172,14 @@ public class SemanticChecker implements ASTVisitor {
             it.nextstep.accept(this);
         }
         if(it.body!=null){
-            it.body.accept(this);
+            if(it.body instanceof BlockStmtNode){
+                ((BlockStmtNode) it.body).scope=curScope;
+                for(var stmt:((BlockStmtNode) it.body).statements){
+                    stmt.accept(this);
+                }
+            }else{
+                it.body.accept(this);
+            }
         }
         curScope=curScope.parent;
     }
@@ -205,7 +222,8 @@ public class SemanticChecker implements ASTVisitor {
     }
 
     public void visit(BlockStmtNode it){
-        curScope=new Scope(curScope);
+        it.scope=new loopScope(curScope);
+        curScope=it.scope;
         for(var stmt:it.statements){
             if(stmt != null){
                 stmt.accept(this);

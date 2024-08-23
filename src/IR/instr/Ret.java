@@ -6,6 +6,11 @@ public class Ret extends Instruction{
 
     public Ret(){}
 
+    public Ret(String type,String value){
+        this.type = type;
+        this.value = value;
+    }
+
     @Override
     public String toString() {
         if(type.equals("void")){

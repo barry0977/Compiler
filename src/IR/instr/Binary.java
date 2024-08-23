@@ -18,16 +18,36 @@ public class Binary extends Instruction {
 
     public void setOp(String obj){
         switch (obj) {
-            case "+" -> op = "add";
-            case "-" -> op = "sub";
-            case "*" -> op = "mul";
-            case "/" -> op = "sdiv";
-            case "%" -> op = "srem";
-            case "<<" -> op = "shl";
-            case ">>" -> op = "ashr";
-            case "&" -> op = "and";
-            case "|" -> op = "or";
-            case "^" -> op = "xor";
+            case "+":
+                op = "add";
+                break;
+            case "-":
+                op = "sub";
+                break;
+            case "*":
+                op = "mul";
+                break;
+            case "/":
+                op = "sdiv";
+                break;
+            case "%":
+                op = "srem";
+                break;
+            case "<<":
+                op = "shl";
+                break;
+            case ">>" :
+                op = "ashr";
+                break;
+            case "&":
+                op = "and";
+                break;
+            case "|":
+                op = "or";
+                break;
+            case "^":
+                op = "xor";
+                break;
         }
     }
 
