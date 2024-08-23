@@ -125,6 +125,36 @@ public class Scope {
         }
     }
 
+    public loopScope getLoopScope(){
+        if(this instanceof loopScope) {
+            return (loopScope) this;
+        }else if(this.parent != null){
+            return this.parent.getLoopScope();
+        }else{
+            return null;
+        }
+    }
+
+    public funcScope getFuncScope(){
+        if(this instanceof funcScope) {
+            return (funcScope) this;
+        }else if(this.parent != null){
+            return this.parent.getFuncScope();
+        }else{
+            return null;
+        }
+    }
+
+    public classScope getClassScope(){
+        if(this instanceof classScope) {
+            return (classScope) this;
+        }else if(this.parent != null){
+            return this.parent.getClassScope();
+        }else{
+            return null;
+        }
+    }
+
     public void setReturn(){
         if(this instanceof funcScope) {
             ((funcScope) this).isReturned=true;

@@ -134,6 +134,7 @@ public class SemanticChecker implements ASTVisitor {
 
     public void visit(WhileStmtNode it){
         it.scope=new loopScope(curScope);
+        it.scope.isWhile=true;
         curScope=it.scope;
         if(it.condition!=null){
             it.condition.accept(this);
@@ -157,6 +158,7 @@ public class SemanticChecker implements ASTVisitor {
 
     public void visit(ForStmtNode it){
         it.scope=new loopScope(curScope);
+        it.scope.isFor=true;
         curScope=it.scope;
         if(it.initStmt!=null){
             it.initStmt.accept(this);
@@ -403,6 +405,7 @@ public class SemanticChecker implements ASTVisitor {
             func=curScope.getFunc(it.func.type.funcinfo.name,true);
         }else if(it.func instanceof MemberExprNode){//如果是成员函数，则之前MemberExpr已经确定
             func=it.func.type.funcinfo;
+            it.isClass=true;
         }
         if(func==null){
             System.out.println("Undefined Identifier");
@@ -435,6 +438,7 @@ public class SemanticChecker implements ASTVisitor {
         }
         //寻找所在的类
         ClassDecl class_ = gScope.getClass(it.obj.type.typeName);//从全局变量里面找到类
+        it.classname=it.obj.type.typeName;//记录类名
         //是否是变量
         Type var = class_.vars.get(it.member);
         if (var != null) {

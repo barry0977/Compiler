@@ -8,6 +8,7 @@ public class MemberExprNode extends ExprNode {
     public ExprNode obj;
     public String member;
     public Type membertype;
+    public String classname;//类的名字
 
     public MemberExprNode( Position pos) {
         super(pos);
