@@ -32,6 +32,14 @@ public class classScope extends Scope {
         funcs.put(func.name,new FuncDecl(func));
     }
 
+    public int getVarIndex(String varName){
+        if(vars.containsKey(varName)){
+            return varindex.get(varName);
+        }else{
+            return -1;
+        }
+    }
+
     @Override
     public void addVar(String name, Type type, Position pos) {
         if(vars.containsKey(name)){

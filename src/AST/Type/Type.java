@@ -77,6 +77,17 @@ public class Type {
         return false;
     }
 
+    public String getType(){
+        if(this.isInt){
+            return "i32";
+        }else if(this.isBool){
+            return "i1";
+        }else if(this.isClass){
+            return "%class."+this.typeName;
+        }
+        return null;
+    }
+
     public String toString(){
         if(this.isInt){
             return "int "+this.dim;

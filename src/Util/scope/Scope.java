@@ -13,6 +13,8 @@ public class Scope {
         blockscope,classscope,funcscope,loopscope
     }
     public HashMap<String, Type> vars;//只存了变量
+    public HashMap<String, Integer>varindex;//记录每个成员是类里面第几个成员
+    public int index=0;
     public scopeType stype;//
     public Scope parent;
     public int depth=0;//在第几层scope
@@ -24,6 +26,7 @@ public class Scope {
     public Scope(Scope parent_) {
         this.parent = parent_;
         this.vars = new HashMap<>();
+        this.varindex = new HashMap<>();
         this.stype = scopeType.blockscope;
         if(parent_!=null){
             this.depth=parent_.depth+1;
@@ -48,6 +51,7 @@ public class Scope {
             throw new semanticError("Duplicate variable name: "+name,pos);
         }
         vars.put(name, type);
+        varindex.put(name,index++);
     }
 
     public boolean containsVar(String name,boolean lookUpon) {
@@ -150,6 +154,17 @@ public class Scope {
             return (classScope) this;
         }else if(this.parent != null){
             return this.parent.getClassScope();
+        }else{
+            return null;
+        }
+    }
+
+    //找到第一次定义变量的scope
+    public Scope findVarScope(String name){
+        if(vars.containsKey(name)) {
+            return this;
+        }else if(parent != null){
+            return parent.findVarScope(name);
         }else{
             return null;
         }

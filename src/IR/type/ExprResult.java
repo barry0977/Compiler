@@ -5,4 +5,5 @@ public class ExprResult {
     public boolean isConst=false;//是否是常量，如果是常量的话，temp中记常量的值
     public String PtrName;//如果是左值,则记载其名字 如%a
     public boolean isPtr=false;
+    public String PtrType;
 }

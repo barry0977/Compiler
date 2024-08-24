@@ -7,13 +7,19 @@ import AST.Expr.BasicExpr.ArrayConstNode;
 import AST.Expr.BasicExpr.BasicExprNode;
 import AST.ProgramNode;
 import AST.Stmt.*;
+import AST.Type.Type;
+import AST.Type.exprType;
 import IR.IRBlock;
 import IR.instr.*;
 import IR.module.*;
 import IR.IRProgram;
 import IR.type.ExprResult;
 import IR.type.IRType;
+import Util.Decl.ClassDecl;
+import Util.Decl.FuncDecl;
 import Util.scope.*;
+
+import java.util.ArrayList;
 
 public class IRBuilder implements ASTVisitor {
     IRProgram program;
@@ -61,20 +67,21 @@ public class IRBuilder implements ASTVisitor {
             funcDef.paramtypes.add(new IRType("ptr"));
             Alloca ins1=new Alloca("%this.addr","ptr");
             funcDef.entry.addIns(ins1);
-            Store ins2=new Store("ptr","%this","%this.addr");
+            Store ins2=new Store("ptr","%this","%this."+curScope.depth+"."+curScope.order);
             funcDef.entry.addIns(ins2);
+            funcDef.entry.addIns(new Load("%this.this","ptr","this.addr"));//用于在成员函数中代替this
         }
         for(var args:it.paraslist.Paralist){//加入参数列表
             funcDef.paramnames.add("%"+args.second);
             funcDef.paramtypes.add(new IRType(args.first));
             Alloca ins1=new Alloca();
-            ins1.result="%"+args.second+".addr";//参数指针名字加上addr
+            ins1.result="%"+args.second+"."+curScope.depth+"."+curScope.order;//参数指针名字加上addr
             ins1.type=new IRType(args.first).toString();//这里alloca的类应该都是ptr
             funcDef.entry.addIns(ins1);
             Store ins2=new Store();
             ins2.type=new IRType(args.first).toString();
             ins2.value="%"+args.second;
-            ins2.pointer="%"+args.second+".addr";
+            ins2.pointer="%"+args.second+"."+curScope.depth+"."+curScope.order;
             funcDef.entry.addIns(ins2);
         }
         funcDef.returntype=new IRType(it.returntype);
@@ -267,6 +274,39 @@ public class IRBuilder implements ASTVisitor {
     }
 
     public void visit(BasicExprNode it){
+        if(it.isIdentifier){
+            if(it.type.isFunc){//函数(只会识别到全局函数，不会识别到类方法)
+
+            }else{//变量(变量都是左值，需要记下指针)
+                var target=curScope.findVarScope(it.name);
+                if(target instanceof classScope){//类的成员变量
+                    Getelementptr ins=new Getelementptr();
+                    int index=curFunc.cnt++;
+                    ins.result="%"+index;//用匿名变量来记载成员变量的指针
+                    ins.pointer="%this.this";//代替this指针
+                    ins.types.add("i32");
+                    ins.idx.add("0");
+                    ins.types.add("i32");
+                    int varid=((classScope) target).getVarIndex(it.name);//获取当前成员变量在类中的位置
+                    ins.idx.add(varid+"");
+                    ins.type="%class."+((classScope) target).classname;//this指针指向的类型是类
+                    curBlock.addIns(ins);
+                    lastExpr.PtrName=ins.result;
+                }else if(target instanceof globalScope){//全局变量
+                    lastExpr.PtrName="@"+it.name;
+                }else{//局部变量
+                    lastExpr.PtrName="%"+it.name+"."+target.depth+"."+target.order;
+                }
+                int numname=curFunc.cnt++;
+                lastExpr.temp="%"+numname;
+                lastExpr.isPtr=true;
+                lastExpr.PtrType=it.type.getType();//指针指向的类型
+                lastExpr.isConst=false;
+                curBlock.addIns(new Load(lastExpr.temp,new IRType(it.type).toString(),lastExpr.PtrName));
+            }
+        }else if(it.isThis){
+
+        }
 
     }
 
@@ -344,11 +384,13 @@ public class IRBuilder implements ASTVisitor {
         String type=new IRType(it.then_.type).toString();
         curBlock.addIns(new Select("%"+name,condvalue,type,truevalue,falsevalue));
         lastExpr.temp="%"+name;
+        lastExpr.isConst=false;
         lastExpr.isPtr=false;
     }
 
 
     public void visit(FuncExprNode it){
+        it.func.accept(this);
         var func=it.func.type.funcinfo;
         String funcname;
         if(it.isClass){//调用类的方法
@@ -356,20 +398,67 @@ public class IRBuilder implements ASTVisitor {
         }else{//调用普通函数
             funcname=func.name;
         }
+        String retype=new IRType(func.returnType).toString();
+        int name=curFunc.cnt++;
+        Call ins=new Call("%"+name,retype,funcname);
+        if(it.isClass){//如果是类方法，第一个参数要加入前面获得的代表this的指针
+            ins.ArgsTy.add("ptr");
+            ins.ArgsVal.add(lastExpr.PtrName);//前面会访问memberExpr,获取类的this指针
+        }
         for(var arg:it.args){
             arg.accept(this);
+            var argsvalue=lastExpr.temp;
+            String argstype=new IRType(arg.type).toString();
+            ins.ArgsTy.add(argstype);
+            ins.ArgsVal.add(argsvalue);
         }
-
     }
 
     public void visit(MemberExprNode it) {
-        it.obj.accept(this);
+        it.obj.accept(this);//获取属于的类的this指针
+        if(it.obj.type.dim>0){//数组，只能调用size
+            //TODO
+        }else{
+            //寻找所在的类
+            ClassDecl class_ = gScope.getClass(it.obj.type.typeName);//从全局变量里面找到类
+            //是否是函数
+            FuncDecl func_ = class_.funcs.get(it.member);
+            if (func_ != null) {//如果是函数，那么需要保存属于的类对象的指针(由于前面访问返回的指针就是this，所以不用修改)
+                lastExpr.isPtr=true;
+                lastExpr.PtrName=lastExpr.PtrName;
+                return;
+            }
+            //是否是变量
+            Type var = class_.vars.get(it.member);
+            if (var != null) {
+                int ptrname=curFunc.cnt++;
+                Getelementptr ins=new Getelementptr();
+                ins.result="%"+ptrname;//获取的指针名
+                ins.pointer=lastExpr.PtrName;
+                ins.type=lastExpr.PtrType;
+                int varid=class_.getIndex(it.member);//是类中的第几个变量
+                ins.types.add("i32");
+                ins.idx.add("0");
+                ins.types.add("i32");
+                ins.idx.add(varid+"");
+                curBlock.addIns(ins);//获取该成员变量
+                lastExpr.isPtr=true;
+                lastExpr.PtrName= ins.result;
+                lastExpr.PtrType=var.getType();
+                int tmp=curFunc.cnt++;
+                lastExpr.temp="%"+tmp;
+                lastExpr.isConst=false;
+                curBlock.addIns(new Load(lastExpr.temp,new IRType(var).toString(),lastExpr.PtrName));//Load指令获取临时值
+                return;
+            }
+        }
     }
 
     public void visit(NewArrayExprNode it){
     }
 
     public void visit(NewVarExprNode it){
+
     }
 
     public void visit(UnaryExprNode it){
