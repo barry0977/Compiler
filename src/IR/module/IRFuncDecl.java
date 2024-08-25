@@ -8,4 +8,6 @@ public class IRFuncDecl {
     public String name;
     public IRType returntype;
     public ArrayList<IRType> paramtypes;
+
+    public
 }

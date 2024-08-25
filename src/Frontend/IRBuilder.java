@@ -39,6 +39,8 @@ public class IRBuilder implements ASTVisitor {
         for(var def:it.defNodes){
             def.accept(this);
         }
+
+
     }
 
     public void visit(ClassDefNode it){
