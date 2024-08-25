@@ -12,6 +12,7 @@ import Util.error.semanticError;
 import java.util.HashMap;
 
 public class globalScope extends Scope{
+    public int strcnt=0;//用于字符串字面量的命名
     public HashMap<String, ClassDecl>classDecls;
     public HashMap<String, FuncDecl>funcDecls;
 

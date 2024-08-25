@@ -180,7 +180,8 @@ public class Scope {
             if(((globalScope) this).funcDecls.containsKey(name)) {
                 return this;
             }
-        }else if(parent != null){
+        }
+        if(parent != null){
             return parent.findFuncScope(name);
         }
         return null;

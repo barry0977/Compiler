@@ -373,6 +373,7 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
         }else if(ctx.ConstString()!=null){
             basicExprNode.isString=true;
             basicExprNode.value=ctx.ConstString().getText();
+            basicExprNode.value=basicExprNode.value.substring(1,basicExprNode.value.length()-1);
             return basicExprNode;
         }else{//数组常量
             return visit(ctx.constArray());

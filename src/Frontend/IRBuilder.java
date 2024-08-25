@@ -315,8 +315,12 @@ public class IRBuilder implements ASTVisitor {
             lastExpr.PtrName="%this.this";
             lastExpr.isPtr=true;
             lastExpr.PtrType=it.type.getType();
-        }else if(it.isString){
-
+        }else if(it.isString){//字符串常量需要定义为全局变量
+            IRStringDef def=new IRStringDef(gScope.strcnt++,it.value);
+            program.globalvars.put(".str."+def.label,def);
+            lastExpr.isPtr=true;
+            lastExpr.PtrName="@.str."+def.label;
+            lastExpr.PtrType="ptr";
         }else if(it.isNull){
 
         }else{
@@ -369,23 +373,45 @@ public class IRBuilder implements ASTVisitor {
         it.rhs.accept(this);
         ExprResult rhsvalue=lastExpr;
         int name=curFunc.cnt++;
-        //TODO
-        //字符串相关的处理还没进行
+        if(it.lhs.type.dim==0&&it.lhs.type.isString){//如果是字符串
+            Call ins=new Call("%"+name,"ptr","string.add");
+            if(it.opCode.equals("+")){
+                ins.FunctionName="string.add";
+            }else if(it.opCode.equals("==")){
+                ins.FunctionName="string.equal";
+            }else if(it.opCode.equals("!=")){
+                ins.FunctionName="string.notEqual";
+            }else if(it.opCode.equals("<")){
+                ins.FunctionName="string.less";
+            }else if(it.opCode.equals("<=")){
+                ins.FunctionName="string.lessOrEqual";
+            }else if(it.opCode.equals(">")){
+                ins.FunctionName="string.greater";
+            }else{
+                ins.FunctionName="string.greaterOrEqual";
+            }
+            ins.ArgsTy.add("ptr");
+            ins.ArgsVal.add(lhsvalue.PtrName);
+            ins.ArgsTy.add("ptr");
+            ins.ArgsVal.add(rhsvalue.PtrName);
+            curBlock.addIns(ins);
+            lastExpr.temp="%"+name;
+            lastExpr.isConst=false;
+            lastExpr.isPtr=false;
+            return;
+        }
         if(it.opCode.equals("==")||it.opCode.equals("!=")||it.opCode.equals(">")||it.opCode.equals(">=")||it.opCode.equals("<")||it.opCode.equals("<=")){
             String type=new IRType(it.lhs.type).toString();
             Icmp obj=new Icmp("%"+name,it.opCode,type,lhsvalue.temp,rhsvalue.temp);
             curBlock.addIns(obj);
-            lastExpr.isConst=false;
-            lastExpr.temp="%"+name;
-            lastExpr.isPtr=false;
         }else{
             String type=new IRType(it.lhs.type).toString();
             Binary obj=new Binary(it.opCode,type, lhsvalue.temp,rhsvalue.temp,"%"+name);
             curBlock.addIns(obj);
-            lastExpr.isConst=false;
-            lastExpr.temp="%"+name;
-            lastExpr.isPtr=false;
         }
+        lastExpr.isConst=false;
+        lastExpr.temp="%"+name;
+        lastExpr.isPtr=false;
     }
 
     public void visit(ConditionExprNode it){
@@ -410,6 +436,11 @@ public class IRBuilder implements ASTVisitor {
         String funcname;
         if(it.isClass){//调用类的方法
             funcname=lastExpr.PtrType+"::"+func.name;
+            if(it.func instanceof MemberExprNode){
+                if(((MemberExprNode) it.func).classname.equals("string")){//如果是字符串的成员函数，要特殊处理名字
+                    funcname="string."+func.name;
+                }
+            }
         }else{//调用普通函数
             funcname=func.name;
         }
@@ -534,5 +565,6 @@ public class IRBuilder implements ASTVisitor {
     }
 
     public void visit(ArrayConstNode it) {
+
     }
 }
