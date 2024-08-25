@@ -9,5 +9,4 @@ public class IRFuncDecl {
     public IRType returntype;
     public ArrayList<IRType> paramtypes;
 
-    public
 }

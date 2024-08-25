@@ -170,6 +170,22 @@ public class Scope {
         }
     }
 
+    //找到第一次定义函数的scope
+    public Scope findFuncScope(String name){
+        if(this instanceof classScope) {
+            if(((classScope) this).funcs.containsKey(name)) {
+                return this;
+            }
+        }else if(this instanceof globalScope) {
+            if(((globalScope) this).funcDecls.containsKey(name)) {
+                return this;
+            }
+        }else if(parent != null){
+            return parent.findFuncScope(name);
+        }
+        return null;
+    }
+
     public void setReturn(){
         if(this instanceof funcScope) {
             ((funcScope) this).isReturned=true;

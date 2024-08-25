@@ -401,8 +401,14 @@ public class SemanticChecker implements ASTVisitor {
             throw new semanticError("Func operation not function",it.pos);
         }
         FuncDecl func=null;
-        if(it.func instanceof BasicExprNode){//如果是普通函数，则去scope中找
-            func=curScope.getFunc(it.func.type.funcinfo.name,true);
+        if(it.func instanceof BasicExprNode){//如果是普通函数，则去scope中找(也可能是类成员函数)
+            var defscope=curScope.findFuncScope(it.func.type.funcinfo.name);
+            if(defscope instanceof classScope){//类成员函数
+                func=curScope.getFunc(it.func.type.funcinfo.name,true);
+                it.isClass=true;
+            }else if(defscope instanceof globalScope){//普通函数
+                func=curScope.getFunc(it.func.type.funcinfo.name,true);
+            }
         }else if(it.func instanceof MemberExprNode){//如果是成员函数，则之前MemberExpr已经确定
             func=it.func.type.funcinfo;
             it.isClass=true;

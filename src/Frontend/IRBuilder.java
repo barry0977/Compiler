@@ -19,8 +19,6 @@ import Util.Decl.ClassDecl;
 import Util.Decl.FuncDecl;
 import Util.scope.*;
 
-import java.util.ArrayList;
-
 public class IRBuilder implements ASTVisitor {
     IRProgram program;
     globalScope gScope;
@@ -106,16 +104,18 @@ public class IRBuilder implements ASTVisitor {
                     if(variable.second instanceof BasicExprNode && (((BasicExprNode) variable.second).isInt||((BasicExprNode) variable.second).isFalse||((BasicExprNode) variable.second).isTrue||((BasicExprNode) variable.second).isNull)){
                         IRGlobalVarDef gvar=new IRGlobalVarDef(variable.first,new IRType(it.vartype),((BasicExprNode) variable.second).value);
                         program.globalvars.put(variable.first,gvar);
-                    }else{
-                        IRGlobalVarDef gvar=new IRGlobalVarDef(variable.first,null,"null");
+                    }else{//用变量初始化
+                        IRGlobalVarDef gvar=new IRGlobalVarDef(variable.first,new IRType(it.vartype),"null");
                         program.globalvars.put(variable.first,gvar);
                         if(!program.funcs.containsKey("_init")){
                             program.funcs.put("_init",new IRFuncDef("_init","void"));
                         }
-                        var tmp=program.funcs.get("_init");
-                        variable.second.accept(this);
-                        //TODO
                         //在init函数中初始化
+                        var tmp=program.funcs.get("_init");
+                        curFunc=tmp;
+                        curBlock=curFunc.entry;
+                        variable.second.accept(this);
+                        curBlock.addIns(new Store(new IRType(it.vartype).toString(), lastExpr.temp,"@"+variable.first));
                     }
                 }
             }
@@ -307,6 +307,14 @@ public class IRBuilder implements ASTVisitor {
                 curBlock.addIns(new Load(lastExpr.temp,new IRType(it.type).toString(),lastExpr.PtrName));
             }
         }else if(it.isThis){
+            lastExpr.PtrName="%this.this";
+            lastExpr.isPtr=true;
+            lastExpr.PtrType=it.type.getType();
+        }else if(it.isString){
+
+        }else if(it.isNull){
+
+        }else{
 
         }
 
