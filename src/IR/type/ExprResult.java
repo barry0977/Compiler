@@ -6,4 +6,12 @@ public class ExprResult {
     public String PtrName;//如果是左值,则记载其名字 如%a
     public boolean isPtr=false;
     public String PtrType;
+
+    public ExprResult(ExprResult obj) {
+        this.temp=obj.temp;
+        this.isConst=obj.isConst;
+        this.PtrName=obj.PtrName;
+        this.isPtr=obj.isPtr;
+        this.PtrType=obj.PtrType;
+    }
 }

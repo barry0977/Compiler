@@ -1,13 +1,22 @@
 package IR.module;
 
 public class IRStringDef extends IRGlobalVarDef{
-    public int label;
+    public String label;
     public int length;
     public String value;
 
-    public IRStringDef(int _label,String ori) {
-        this.label = _label;
-        setValue(ori);
+    public IRStringDef(String ori){
+        value=ori+"\\00";
+        length=ori.length()+1;
+    }
+
+    public IRStringDef(int _label,String ori,boolean isfstr) {
+        this.label = _label+"";
+        if(isfstr){
+            setValueFormat(ori);
+        }else{
+            setValue(ori);
+        }
     }
 
     public void setValue(String tmp) {
@@ -24,6 +33,36 @@ public class IRStringDef extends IRGlobalVarDef{
                     sb.append("\\22");
                 }
                 length++;
+                i++;
+                continue;
+            }
+            sb.append(c);
+            length++;
+        }
+        sb.append("\\00");
+        length++;
+        this.value=sb.toString();
+    }
+
+    public void setValueFormat(String tmp) {
+        StringBuilder sb=new StringBuilder();
+        for(int i=0;i<tmp.length();i++) {
+            char c = tmp.charAt(i);
+            if(c=='\\'){
+                char next = tmp.charAt(i+1);
+                if(next=='\\'){
+                    sb.append("\\\\");
+                }else if(next=='n'){
+                    sb.append("\\0A");
+                }else if(next=='"'){
+                    sb.append("\\22");
+                }
+                length++;
+                i++;
+                continue;
+            }
+            if(c=='$'){//格式化字符串中用$$替代$
+                sb.append("$");
                 i++;
                 continue;
             }

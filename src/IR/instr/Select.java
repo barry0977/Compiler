@@ -18,6 +18,6 @@ public class Select extends Instruction {
 
     @Override
     public String toString() {
-        return result + " = select i1 " + cond + ", " + ty + " " + val1 + ", " + ty + val2;
+        return result + " = select i1 " + cond + ", " + ty + " " + val1 + ", " + ty +" "+ val2;
     }
 }

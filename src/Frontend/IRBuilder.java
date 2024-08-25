@@ -19,6 +19,8 @@ import Util.Decl.ClassDecl;
 import Util.Decl.FuncDecl;
 import Util.scope.*;
 
+import java.util.ArrayList;
+
 public class IRBuilder implements ASTVisitor {
     IRProgram program;
     globalScope gScope;
@@ -26,6 +28,7 @@ public class IRBuilder implements ASTVisitor {
     IRBlock curBlock;
     ExprResult lastExpr;//最后一次运算出的结果
     IRFuncDef curFunc;
+    IRFuncDef Init;
 
     public IRBuilder(IRProgram program, globalScope gscope) {
         this.program = program;
@@ -34,11 +37,15 @@ public class IRBuilder implements ASTVisitor {
     }
 
     public void visit(ProgramNode it){
+        Init=new IRFuncDef("_init","void");
+        program.funcs.add(Init);
+        IRStringDef truedef=new IRStringDef("true");
+        truedef.label="true";
+        IRStringDef falsedef=new IRStringDef("false");
+        truedef.label="false";
         for(var def:it.defNodes){
             def.accept(this);
         }
-
-
     }
 
     public void visit(ClassDefNode it){
@@ -48,7 +55,7 @@ public class IRBuilder implements ASTVisitor {
         for(var mem:it.vars){
             classDef.members.add(new IRType(mem.vartype));
         }
-        program.classs.put(it.name,classDef);
+        program.classs.add(classDef);
         for(var func:it.funcs){
             func.accept(this);
         }
@@ -85,7 +92,7 @@ public class IRBuilder implements ASTVisitor {
             funcDef.entry.addIns(ins2);
         }
         funcDef.returntype=new IRType(it.returntype);
-        program.funcs.put(funcDef.name,funcDef);
+        program.funcs.add(funcDef);
         this.curFunc=funcDef;
         this.curBlock=funcDef.entry;
         for(var stmt:it.body){
@@ -99,20 +106,16 @@ public class IRBuilder implements ASTVisitor {
             for(var variable:it.vars){
                 if(variable.second==null){//没有初始值
                     IRGlobalVarDef gvar=new IRGlobalVarDef(variable.first,new IRType(it.vartype),"null");
-                    program.globalvars.put(variable.first,gvar);
+                    program.globalvars.add(gvar);
                 }else{
                     if(variable.second instanceof BasicExprNode && (((BasicExprNode) variable.second).isInt||((BasicExprNode) variable.second).isFalse||((BasicExprNode) variable.second).isTrue||((BasicExprNode) variable.second).isNull)){
                         IRGlobalVarDef gvar=new IRGlobalVarDef(variable.first,new IRType(it.vartype),((BasicExprNode) variable.second).value);
-                        program.globalvars.put(variable.first,gvar);
+                        program.globalvars.add(gvar);
                     }else{//用变量初始化
                         IRGlobalVarDef gvar=new IRGlobalVarDef(variable.first,new IRType(it.vartype),"null");
-                        program.globalvars.put(variable.first,gvar);
-                        if(!program.funcs.containsKey("_init")){
-                            program.funcs.put("_init",new IRFuncDef("_init","void"));
-                        }
+                        program.globalvars.add(gvar);
                         //在init函数中初始化
-                        var tmp=program.funcs.get("_init");
-                        curFunc=tmp;
+                        curFunc=Init;
                         curBlock=curFunc.entry;
                         variable.second.accept(this);
                         curBlock.addIns(new Store(new IRType(it.vartype).toString(), lastExpr.temp,"@"+variable.first));
@@ -142,7 +145,7 @@ public class IRBuilder implements ASTVisitor {
         funcDef.entry.addIns(new Store("ptr","%this","%this.addr"));
         funcDef.returntype=new IRType("void");
         curBlock=funcDef.entry;
-        program.funcs.put(it.name,funcDef);
+        program.funcs.add(funcDef);
         this.curFunc=funcDef;
         this.curBlock=funcDef.entry;
         for(var stmt:it.stmts){
@@ -155,7 +158,25 @@ public class IRBuilder implements ASTVisitor {
 
     public void visit(IfStmtNode it){
         it.condition.accept(this);
+        curBlock.addIns(new Br(lastExpr.temp,"if.then."+curScope.depth+"."+curScope.order,"if.else."+curScope.depth+"."+curScope.order));
 
+        curBlock=curFunc.addBlock(new IRBlock("if.then."+curScope.depth+"."+curScope.order));
+        if(it.trueStmt != null){
+            curScope=it.trueScope;
+            it.trueStmt.accept(this);
+            curScope=curScope.parent;
+        }
+        curBlock.addIns(new Br("if.end."+curScope.depth+"."+curScope.order));
+
+        curBlock=curFunc.addBlock(new IRBlock("if.else."+curScope.depth+"."+curScope.order));
+        if(it.falseStmt != null){
+            curScope=it.falseScope;
+            it.falseStmt.accept(this);
+            curScope=curScope.parent;
+        }
+        curBlock.addIns(new Br("if.end."+curScope.depth+"."+curScope.order));
+
+        curBlock=curFunc.addBlock(new IRBlock("if.end."+curScope.depth+"."+curScope.order));
     }
 
     public void visit(WhileStmtNode it){
@@ -316,13 +337,13 @@ public class IRBuilder implements ASTVisitor {
             lastExpr.isPtr=true;
             lastExpr.PtrType=it.type.getType();
         }else if(it.isString){//字符串常量需要定义为全局变量
-            IRStringDef def=new IRStringDef(gScope.strcnt++,it.value);
-            program.globalvars.put(".str."+def.label,def);
+            IRStringDef def=new IRStringDef(gScope.strcnt++,it.value,false);
+            program.globalvars.add(def);
             lastExpr.isPtr=true;
             lastExpr.PtrName="@.str."+def.label;
             lastExpr.PtrType="ptr";
         }else if(it.isNull){
-
+            //TODO
         }else{
 
         }
@@ -562,6 +583,55 @@ public class IRBuilder implements ASTVisitor {
     }
 
     public void visit(FStringExprNode it){
+        ArrayList<String>exprlist=new ArrayList<>();
+        ArrayList<String>strlist=new ArrayList<>();
+        for(var str:it.stringlist){
+            IRStringDef strdef=new IRStringDef(gScope.strcnt++,str,true);
+            program.globalvars.add(strdef);
+            strlist.add("@.str."+strdef.label);
+        }
+        for(var expr:it.exprlist){
+            expr.accept(this);
+            if(expr.type.isString){
+            }else if(expr.type.isInt){
+                int tmp=curFunc.cnt++;
+                Call ins=new Call("%"+tmp,"ptr","toString");
+                ins.ArgsTy.add("i32");
+                ins.ArgsVal.add(lastExpr.temp);
+                curBlock.addIns(ins);
+                lastExpr.temp="%"+tmp;
+                lastExpr.isConst=false;
+                lastExpr.isPtr=false;
+            }else{
+                int tmp=curFunc.cnt++;
+                Select ins=new Select("%"+tmp,lastExpr.temp,"ptr","@.str.true","@.str.false");
+                curBlock.addIns(ins);
+                lastExpr.temp="%"+tmp;
+                lastExpr.isConst=false;
+                lastExpr.isPtr=false;
+            }
+            exprlist.add(lastExpr.temp);
+        }
+        lastExpr.temp=strlist.get(0);
+        lastExpr.isConst=false;
+        lastExpr.isPtr=false;
+        for(int i=0;i<exprlist.size();i++){
+            int tmp=curFunc.cnt++;
+            Call ins=new Call("%"+tmp,"ptr","string.add");
+            ins.ArgsTy.add("ptr");
+            ins.ArgsVal.add(exprlist.get(i));
+            ins.ArgsTy.add("ptr");
+            ins.ArgsVal.add(strlist.get(i+1));
+            curBlock.addIns(ins);
+            int ans=curFunc.cnt++;
+            Call ins2=new Call("%"+ans,"ptr","string.add");
+            ins2.ArgsTy.add("ptr");
+            ins2.ArgsVal.add(lastExpr.temp);
+            ins2.ArgsTy.add("ptr");
+            ins2.ArgsVal.add("%"+tmp);
+            curBlock.addIns(ins2);
+            lastExpr.temp="%"+ans;
+        }
     }
 
     public void visit(ArrayConstNode it) {

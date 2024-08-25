@@ -121,13 +121,29 @@ public class SemanticChecker implements ASTVisitor {
             }
         }
         if(it.trueStmt!=null){
-            curScope=new Scope(curScope);
-            it.trueStmt.accept(this);
+            it.trueScope=new Scope(curScope);
+            curScope=it.trueScope;
+            if(it.trueStmt instanceof BlockStmtNode){
+                ((BlockStmtNode) it.trueStmt).scope=curScope;
+                for(var stmt:((BlockStmtNode) it.trueStmt).statements){
+                    stmt.accept(this);
+                }
+            }else{
+                it.trueStmt.accept(this);
+            }
             curScope=curScope.parent;
         }
         if(it.falseStmt!=null){
-            curScope=new Scope(curScope);
-            it.falseStmt.accept(this);
+            it.falseScope=new Scope(curScope);
+            curScope=it.falseScope;
+            if(it.falseStmt instanceof BlockStmtNode){
+                ((BlockStmtNode) it.falseStmt).scope=curScope;
+                for(var stmt:((BlockStmtNode) it.falseStmt).statements){
+                    stmt.accept(this);
+                }
+            }else{
+                it.falseStmt.accept(this);
+            }
             curScope=curScope.parent;
         }
     }
@@ -224,7 +240,7 @@ public class SemanticChecker implements ASTVisitor {
     }
 
     public void visit(BlockStmtNode it){
-        it.scope=new loopScope(curScope);
+        it.scope=new Scope(curScope);
         curScope=it.scope;
         for(var stmt:it.statements){
             if(stmt != null){

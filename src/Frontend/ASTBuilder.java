@@ -234,16 +234,16 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
     @Override public ASTNode visitFStringExpr(MxParser.FStringExprContext ctx) {
         FStringExprNode fStringExprNode=new FStringExprNode(new Position(ctx));
         if(ctx.fstring().BasicFString()!=null){//不含有表达式
-            fStringExprNode.stringlist.add(ctx.fstring().BasicFString().getText());
+            fStringExprNode.stringlist.add(ctx.fstring().BasicFString().getText().substring(2,ctx.fstring().BasicFString().getText().length()-1));
         }else{//含有表达式
             for(var expr:ctx.fstring().expression()){
                 fStringExprNode.exprlist.add((ExprNode) visit(expr));
             }
-            fStringExprNode.stringlist.add(ctx.fstring().FStringFront().getText());
+            fStringExprNode.stringlist.add(ctx.fstring().FStringFront().getText().substring(2,ctx.fstring().FStringFront().getText().length()-1));
             for(var mid:ctx.fstring().FStringMid()){
-                fStringExprNode.stringlist.add(mid.getText());
+                fStringExprNode.stringlist.add(mid.getText().substring(1,mid.getText().length()-1));
             }
-            fStringExprNode.stringlist.add(ctx.fstring().FStringEnd().getText());
+            fStringExprNode.stringlist.add(ctx.fstring().FStringEnd().getText().substring(1,ctx.fstring().FStringEnd().getText().length()-1));
         }
         return fStringExprNode;
     }
@@ -338,16 +338,16 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
     @Override public ASTNode visitFstring(MxParser.FstringContext ctx) {
         FStringExprNode fStringExprNode=new FStringExprNode(new Position(ctx));
         if(ctx.BasicFString()!=null){//不含有表达式
-            fStringExprNode.stringlist.add(ctx.BasicFString().getText());
+            fStringExprNode.stringlist.add(ctx.BasicFString().getText().substring(2,ctx.BasicFString().getText().length()-1));
         }else{//含有表达式
             for(var expr:ctx.expression()){
                 fStringExprNode.exprlist.add((ExprNode) visit(expr));
             }
-            fStringExprNode.stringlist.add(ctx.FStringFront().getText());
+            fStringExprNode.stringlist.add(ctx.FStringFront().getText().substring(2,ctx.FStringFront().getText().length()-1));
             for(var mid:ctx.FStringMid()){
-                fStringExprNode.stringlist.add(mid.getText());
+                fStringExprNode.stringlist.add(mid.getText().substring(1,mid.getText().length()-1));
             }
-            fStringExprNode.stringlist.add(ctx.FStringEnd().getText());
+            fStringExprNode.stringlist.add(ctx.FStringEnd().getText().substring(1,ctx.FStringEnd().getText().length()-1));
         }
         return fStringExprNode;
     }
