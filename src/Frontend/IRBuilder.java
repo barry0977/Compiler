@@ -277,8 +277,13 @@ public class IRBuilder implements ASTVisitor {
 
     public void visit(BasicExprNode it){
         if(it.isIdentifier){
-            if(it.type.isFunc){//函数(只会识别到全局函数，不会识别到类方法)
-
+            if(it.type.isFunc){//函数(可能会在类方法里面调用另一个类方法，这里会被识别到)
+                classScope obj=curScope.getClassScope();
+                if(obj!= null){//如果是类方法，需要传递this指针
+                    lastExpr.isPtr=true;
+                    lastExpr.PtrName="%this.this";
+                    lastExpr.PtrType="%class."+obj.classname;
+                }
             }else{//变量(变量都是左值，需要记下指针)
                 var target=curScope.findVarScope(it.name);
                 if(target instanceof classScope){//类的成员变量
@@ -404,7 +409,7 @@ public class IRBuilder implements ASTVisitor {
         var func=it.func.type.funcinfo;
         String funcname;
         if(it.isClass){//调用类的方法
-            funcname=((MemberExprNode) it.func).classname+"::"+func.name;
+            funcname=lastExpr.PtrType+"::"+func.name;
         }else{//调用普通函数
             funcname=func.name;
         }
@@ -422,6 +427,10 @@ public class IRBuilder implements ASTVisitor {
             ins.ArgsTy.add(argstype);
             ins.ArgsVal.add(argsvalue);
         }
+        curBlock.addIns(ins);
+        lastExpr.temp="%"+name;
+        lastExpr.isConst=false;
+        lastExpr.isPtr=false;
     }
 
     public void visit(MemberExprNode it) {
@@ -436,6 +445,7 @@ public class IRBuilder implements ASTVisitor {
             if (func_ != null) {//如果是函数，那么需要保存属于的类对象的指针(由于前面访问返回的指针就是this，所以不用修改)
                 lastExpr.isPtr=true;
                 lastExpr.PtrName=lastExpr.PtrName;
+                lastExpr.PtrType=lastExpr.PtrType;
                 return;
             }
             //是否是变量
