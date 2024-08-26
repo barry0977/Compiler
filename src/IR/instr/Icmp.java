@@ -43,6 +43,6 @@ public class Icmp extends Instruction{
 
     @Override
     public String toString(){
-        return result+" = icmp "+cond+" "+ty+" "+op1+", "+op2+";\n";
+        return "\t"+result+" = icmp "+cond+" "+ty+" "+op1+", "+op2+";\n";
     }
 }

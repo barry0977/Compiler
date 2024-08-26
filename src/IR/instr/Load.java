@@ -13,6 +13,6 @@ public class Load extends Instruction{
 
     @Override
     public String toString() {
-        return result+" = load "+type+", ptr "+pointer+";\n";
+        return "\t"+result+" = load "+type+", ptr "+pointer+";\n";
     }
 }

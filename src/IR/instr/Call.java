@@ -25,6 +25,7 @@ public class Call extends Instruction {
     @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
+        builder.append("\t");
         if(ResultType.equals("void")){
             builder.append("call void @");
         }else{

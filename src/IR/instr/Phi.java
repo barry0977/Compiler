@@ -23,6 +23,7 @@ public class Phi extends Instruction {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        sb.append("\t");
         sb.append(result);
         sb.append(" = phi ");
         sb.append(ty);

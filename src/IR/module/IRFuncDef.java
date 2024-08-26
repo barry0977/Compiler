@@ -53,8 +53,9 @@ public class IRFuncDef {
         str.append(") {\n");
         str.append(entry.toString());
         for(int i=0; i<body.size(); i++){
-            str.append(body.get(i).toString()).append("\n");
+            str.append(body.get(i).toString());
         }
+        str.append("}\n\n");
         return str.toString();
     }
 }

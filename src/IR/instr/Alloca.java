@@ -12,6 +12,6 @@ public class Alloca extends Instruction{
 
     @Override
     public String toString() {
-        return result+" = alloca "+type+";\n";
+        return "\t"+result+" = alloca "+type+";\n";
     }
 }

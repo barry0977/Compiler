@@ -14,11 +14,13 @@ public class Getelementptr extends Instruction{
 
     @Override
     public String toString() {
-        String res=result+" = getelementptr "+type+", ptr "+pointer;
+        StringBuilder sb=new StringBuilder();
+        sb.append("\t");
+        sb.append(result+" = getelementptr "+type+", ptr "+pointer);
         for(int i=0;i<types.size();i++){
-            res+=", "+types.get(i)+" "+idx.get(i);
+            sb.append(", "+types.get(i)+" "+idx.get(i));
         }
-        res+=";\n";
-        return res;
+        sb.append(";\n");
+        return sb.toString();
     }
 }

@@ -13,6 +13,6 @@ public class Store extends Instruction{
 
     @Override
     public String toString() {
-        return "store "+type+" "+value+", ptr "+pointer+";\n";
+        return "\t"+"store "+type+" "+value+", ptr "+pointer+";\n";
     }
 }

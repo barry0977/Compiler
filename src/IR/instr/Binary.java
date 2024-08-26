@@ -53,6 +53,6 @@ public class Binary extends Instruction {
 
     @Override
     public String toString(){
-        return result+" = "+op+" "+ty+" "+lhs+", "+rhs+"\n";
+        return "\t"+result+" = "+op+" "+ty+" "+lhs+", "+rhs+"\n";
     }
 }
