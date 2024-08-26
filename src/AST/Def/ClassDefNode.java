@@ -13,6 +13,7 @@ public class ClassDefNode extends DefNode {
     public ArrayList<VarDefNode> vars;
     public ArrayList<FuncDefNode> funcs;
     public classScope scope;
+    public classScope scope2;
 
     public ClassDefNode(Position pos) {
         super(pos);

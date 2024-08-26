@@ -13,11 +13,15 @@ import Util.scope.*;
 
 public class SymbolCollector implements ASTVisitor {
     private globalScope gScope;
+    private globalScope gScope2;//拷贝
     public Scope curScope;
+    public Scope curScope2;
 
-    public SymbolCollector(globalScope gScope) {
+    public SymbolCollector(globalScope gScope, globalScope gScope2) {
         this.gScope = gScope;
         this.curScope=this.gScope;
+        this.gScope2=gScope2;
+        this.curScope2=this.gScope2;
     }
 
     @Override
@@ -30,11 +34,16 @@ public class SymbolCollector implements ASTVisitor {
     @Override
     public void visit(ClassDefNode it){
         gScope.addClass(it);
+        gScope2.addClass(it);
         it.scope=new classScope(curScope);
         it.scope.classname=it.name;
+        it.scope2=new classScope(curScope2);
+        it.scope2.classname=it.name;
         curScope=it.scope;
+        curScope2=it.scope2;
         for(var func:it.funcs){
             it.scope.addFunc(func);
+            it.scope2.addFunc(func);
             visit(func);
         }
         //类中变量支持前向引用
@@ -42,27 +51,38 @@ public class SymbolCollector implements ASTVisitor {
             for(var v:x.vars) {
                 if(v.second==null){
                     it.scope.addVar(v.first,x.vartype,x.pos);
+                    it.scope2.addVar(v.first,x.vartype,x.pos);
                 }else{
                     it.scope.addVar(v.first,x.vartype,x.pos);
+                    it.scope2.addVar(v.first,x.vartype,x.pos);
                 }
             }
         }
         curScope=it.scope.getParent();
+        curScope2=it.scope2.getParent();
     }
 
     @Override
     public void visit(FuncDefNode it){
         if(curScope==gScope){
             gScope.addFunc(it);
+            gScope2.addFunc(it);
         }
         it.scope=new funcScope(curScope);
+        it.scope2=new funcScope(curScope2);
         curScope=it.scope;
+        curScope2=it.scope2;
         for(var args:it.paraslist.Paralist){
             it.scope.addVar(args.second,args.first,it.pos);
             it.scope.params.put(args.second,args.first);
+
+            it.scope2.addVar(args.second,args.first,it.pos);
+            it.scope2.params.put(args.second,args.first);
         }
         it.scope.returnType=new Type(it.returntype);
+        it.scope2.returnType=new Type(it.returntype);
         curScope=it.scope.getParent();
+        curScope2=it.scope2.getParent();
     }
     //全局变量和局部变量不支持前向引用，不用加进去
     public void visit(VarDefNode it) { }

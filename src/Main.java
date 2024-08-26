@@ -18,6 +18,7 @@ public class Main {
         try {
             ProgramNode ASTRoot;
             globalScope gScope = new globalScope(null);
+            globalScope gScope2 = new globalScope(null);//作为gScope的备份，存储symbolcollector之后的gScope，用在IRBuilder中
 
             MxLexer lexer = new MxLexer(input);
             lexer.removeErrorListeners();
@@ -28,8 +29,9 @@ public class Main {
             ParseTree parseTreeRoot = parser.program();
             ASTBuilder astBuilder = new ASTBuilder();
             ASTRoot=(ProgramNode) astBuilder.visit(parseTreeRoot);
-            new SymbolCollector(gScope).visit(ASTRoot);
+            new SymbolCollector(gScope,gScope2).visit(ASTRoot);
             new SemanticChecker(gScope).visit(ASTRoot);
+
         } catch (Error er) {
             System.err.println(er.toString());
             throw new RuntimeException();

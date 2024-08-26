@@ -15,6 +15,7 @@ public class FuncDefNode extends DefNode {
     public ParalistNode paraslist;
     public ArrayList<StmtNode> body;
     public funcScope scope;//函数定义域
+    public funcScope scope2;
 
     public FuncDefNode(Position pos) {
         super(pos);

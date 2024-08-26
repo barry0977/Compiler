@@ -17,6 +17,7 @@ import IR.type.ExprResult;
 import IR.type.IRType;
 import Util.Decl.ClassDecl;
 import Util.Decl.FuncDecl;
+import Util.error.semanticError;
 import Util.scope.*;
 
 import java.util.ArrayList;
@@ -49,7 +50,7 @@ public class IRBuilder implements ASTVisitor {
     }
 
     public void visit(ClassDefNode it){
-        curScope=it.scope;
+        curScope=it.scope2;
         IRClassDef classDef = new IRClassDef();
         classDef.name=it.name;
         for(var mem:it.vars){
@@ -64,7 +65,7 @@ public class IRBuilder implements ASTVisitor {
     }
 
     public void visit(FuncDefNode it){
-        curScope=it.scope;
+        curScope=it.scope2;
         IRFuncDef funcDef=new IRFuncDef();
         if(curScope instanceof globalScope){//全局函数
             funcDef.name=it.name;
@@ -130,13 +131,19 @@ public class IRBuilder implements ASTVisitor {
                 curFunc.entry.addIns(ins);
                 if(variable.second!=null){
                     variable.second.accept(this);
-                    //TODO
+                    curFunc.entry.addIns(new Store(ins.type,lastExpr.temp,ins.result));
                 }
+            }
+        }
+        for(var x:it.vars){
+            if(!(curScope instanceof classScope)){//类里面的变量symbolcollect时已经加过了
+                curScope.addVar(x.first,it.vartype,it.pos);
             }
         }
     }
 
     public void visit(ConstructNode it){
+        curScope=new funcScope(curScope,new Type("void",0));
         IRFuncDef funcDef=new IRFuncDef();
         funcDef.name=it.name+"::"+it.name;
         funcDef.paramnames.add("%this");
@@ -151,6 +158,7 @@ public class IRBuilder implements ASTVisitor {
         for(var stmt:it.stmts){
             stmt.accept(this);
         }
+        curScope=curScope.parent;
     }
 
     public void visit(ParalistNode it){
@@ -162,16 +170,28 @@ public class IRBuilder implements ASTVisitor {
 
         curBlock=curFunc.addBlock(new IRBlock("if.then."+curScope.depth+"."+curScope.order));
         if(it.trueStmt != null){
-            curScope=it.trueScope;
-            it.trueStmt.accept(this);
+            curScope=new Scope(curScope);
+            if(it.trueStmt instanceof BlockStmtNode){
+                for(var stmt:((BlockStmtNode) it.trueStmt).statements){
+                    stmt.accept(this);
+                }
+            }else{
+                it.trueStmt.accept(this);
+            }
             curScope=curScope.parent;
         }
         curBlock.addIns(new Br("if.end."+curScope.depth+"."+curScope.order));
 
         curBlock=curFunc.addBlock(new IRBlock("if.else."+curScope.depth+"."+curScope.order));
         if(it.falseStmt != null){
-            curScope=it.falseScope;
-            it.falseStmt.accept(this);
+            curScope=new Scope(curScope);
+            if(it.falseStmt instanceof BlockStmtNode){
+                for(var stmt:((BlockStmtNode) it.falseStmt).statements){
+                    stmt.accept(this);
+                }
+            }else{
+                it.falseStmt.accept(this);
+            }
             curScope=curScope.parent;
         }
         curBlock.addIns(new Br("if.end."+curScope.depth+"."+curScope.order));
@@ -180,7 +200,7 @@ public class IRBuilder implements ASTVisitor {
     }
 
     public void visit(WhileStmtNode it){
-        curScope=it.scope;
+        curScope=new loopScope(curScope);
         curBlock.addIns(new Br("while.cond."+curScope.depth+"."+curScope.order));
 
         curBlock=curFunc.addBlock(new IRBlock("while.cond."+curScope.depth+"."+curScope.order));
@@ -188,8 +208,14 @@ public class IRBuilder implements ASTVisitor {
         curBlock.addIns(new Br(lastExpr.temp,"while.body."+curScope.depth+"."+curScope.order,"while.end"+curScope.depth+"."+curScope.order));
 
         curBlock=curFunc.addBlock(new IRBlock("while.body."+curScope.depth+"."+curScope.order));
-        if(it.body != null){
-            it.body.accept(this);
+        if(it.body!=null){
+            if(it.body instanceof BlockStmtNode){
+                for(var stmt:((BlockStmtNode) it.body).statements){
+                    stmt.accept(this);
+                }
+            }else{
+                it.body.accept(this);
+            }
         }
         curBlock.addIns(new Br("while.cond."+curScope.depth+"."+curScope.order));
 
@@ -198,6 +224,8 @@ public class IRBuilder implements ASTVisitor {
     }
 
     public void visit(ForStmtNode it){
+        it.scope=new loopScope(curScope);
+        it.scope.isFor=true;
         curScope=it.scope;
         if(it.initStmt != null){
             it.initStmt.accept(this);
@@ -213,8 +241,14 @@ public class IRBuilder implements ASTVisitor {
         }
 
         curBlock=curFunc.addBlock(new IRBlock("for.body."+curScope.depth+"."+curScope.order));
-        if(it.body != null){
-            it.body.accept(this);
+        if(it.body!=null){
+            if(it.body instanceof BlockStmtNode){
+                for(var stmt:((BlockStmtNode) it.body).statements){
+                    stmt.accept(this);
+                }
+            }else{
+                it.body.accept(this);
+            }
         }
         curBlock.addIns(new Br("for.step."+curScope.depth+"."+curScope.order));
 
@@ -261,7 +295,7 @@ public class IRBuilder implements ASTVisitor {
     }
 
     public void visit(BlockStmtNode it){
-        curScope=it.scope;
+        curScope=new Scope(curScope);
         for(var stmt:it.statements){
             stmt.accept(this);
         }
@@ -272,9 +306,7 @@ public class IRBuilder implements ASTVisitor {
         it.varDef.accept(this);
     }
 
-    public void visit(EmptyStmtNode it){
-        return;
-    }
+    public void visit(EmptyStmtNode it){}
 
     public void visit(ArrayExprNode it){
         //TODO
@@ -287,7 +319,7 @@ public class IRBuilder implements ASTVisitor {
         var value=lastExpr.temp;
 
         if(it.lhs.type.dim==0&&it.lhs.type.isString){
-            //TODO
+            curBlock.addIns(new Store("ptr",value,obj));
         }else{
             String type=new IRType(it.lhs.type).toString();
             curBlock.addIns(new Store(type,value,obj));
@@ -530,7 +562,7 @@ public class IRBuilder implements ASTVisitor {
     }
 
     public void visit(NewVarExprNode it){
-
+        Call ins=new Call()
     }
 
     public void visit(UnaryExprNode it){
