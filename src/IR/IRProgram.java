@@ -5,7 +5,6 @@ import IR.module.IRFuncDef;
 import IR.module.IRGlobalVarDef;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 
 public class IRProgram {
     public ArrayList<IRGlobalVarDef> globalvars;
@@ -16,5 +15,19 @@ public class IRProgram {
         globalvars = new ArrayList<>();
         classs = new ArrayList<>();
         funcs = new ArrayList<>();
+    }
+
+    public String toString(){
+        StringBuilder sb = new StringBuilder();
+        for(IRClassDef c : classs){
+            sb.append(c.toString());
+        }
+        for(IRGlobalVarDef gv : globalvars){
+            sb.append(gv.toString());
+        }
+        for (IRFuncDef f : funcs){
+            sb.append(f.toString());
+        }
+        return sb.toString();
     }
 }

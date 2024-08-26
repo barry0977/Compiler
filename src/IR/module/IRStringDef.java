@@ -81,7 +81,7 @@ public class IRStringDef extends IRGlobalVarDef{
         sb.append(" = private unnamed_addr constant [");
         sb.append(length+" x i8] c\"");
         sb.append(value);
-        sb.append("\"");
+        sb.append("\"\n");
         return sb.toString();
     }
 }

@@ -13,12 +13,15 @@ public class IRClassDef {
     }
 
     public String toString(){
-        String res="%class."+name+" = type {";
-        for(int i=0; i<members.size()-1; i++){
-            res += members.get(i).toString();
-            res+=", ";
+        StringBuilder res=new StringBuilder();
+        res.append("%class."+name+" = type {");
+        for(int i=0; i<members.size(); i++){
+            if(i>0){
+                res.append(", ");
+            }
+            res.append(members.get(i).toString());
         }
-        res+=members.get(members.size()-1).toString()+" }";
-        return res;
+        res.append(" }\n");
+        return res.toString();
     }
 }
