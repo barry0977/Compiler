@@ -44,7 +44,7 @@ public class Call extends Instruction {
             builder.append(" ");
             builder.append(ArgsVal.get(i));
         }
-        builder.append(")");
+        builder.append(")\n");
         return builder.toString();
     }
 }

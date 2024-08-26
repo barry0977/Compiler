@@ -15,16 +15,16 @@ public class IRFuncDef {
     public ArrayList<IRBlock> body;
 
     public IRFuncDef(){
-        this.entry.label="entry";
+        entry=new IRBlock("entry");
         body=new ArrayList<>();
         paramtypes=new ArrayList<>();
         paramnames=new ArrayList<>();
     }
 
     public IRFuncDef(String name,String type){
+        entry=new IRBlock("entry");
         this.name=name;
         this.returntype=new IRType(type);
-        this.entry.label="entry";
         body=new ArrayList<>();
         paramtypes=new ArrayList<>();
         paramnames=new ArrayList<>();
@@ -54,6 +54,9 @@ public class IRFuncDef {
         str.append(entry.toString());
         for(int i=0; i<body.size(); i++){
             str.append(body.get(i).toString());
+        }
+        if(this.name.equals("_init")){//_init函数最后要有返回值
+            str.append("ret void\n");
         }
         str.append("}\n\n");
         return str.toString();

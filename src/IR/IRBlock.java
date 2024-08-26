@@ -21,7 +21,7 @@ public class IRBlock {
         StringBuilder sb = new StringBuilder();
         sb.append(label).append(":\n");
         for (Instruction i : statements) {
-            sb.append(i.toString()).append("\n");
+            sb.append(i.toString());
         }
         return sb.toString();
     }

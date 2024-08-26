@@ -13,3 +13,11 @@ Sema:
 .PHONY: Semall
 Semall:
 	time -p ./testcases/sema/scripts/test_all.bash 'java -cp /ulib/antlr-4.13.2-complete.jar:bin Main' testcases/sema/
+
+.PHONY: IRa
+IRa:
+	./testcases/codegen/scripts/test_llvm_ir.bash 'java -cp /ulib/antlr-4.13.2-complete.jar:bin Main -emit-llvm' testcases/codegen/e2.mx src/IR/builtin/builtin.ll
+
+.PHONY: IRall
+IRall:
+	./testcases/codegen/scripts/test_llvm_ir_all.bash 'java -cp /ulib/antlr-4.13.2-complete.jar:bin Main -emit-llvm' testcases/codegen/ src/IR/builtin/builtin.ll

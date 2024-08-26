@@ -22,9 +22,9 @@ public class Br extends Instruction {
     @Override
     public String toString(){
         if(haveCondition){
-            return "\t"+"br i1 "+cond+", label "+iftrue+",label "+iffalse+";\n";
+            return "\t"+"br i1 "+cond+", label %"+iftrue+",label %"+iffalse+";\n";
         }else{
-            return "\t"+"br label "+dest+";\n";
+            return "\t"+"br label %"+dest+";\n";
         }
     }
 }

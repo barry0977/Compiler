@@ -14,6 +14,8 @@ import org.antlr.v4.runtime.tree.ParseTree;
 import Util.scope.*;
 import Util.error.Error;
 
+import java.io.FileWriter;
+
 public class Main {
     public static void main(String[] args) throws Exception{
         var input = CharStreams.fromStream(System.in);
@@ -37,6 +39,9 @@ public class Main {
             IRProgram irprogram = new IRProgram();
             new IRBuilder(irprogram,gScope2).visit(ASTRoot);
             System.out.println(irprogram.toString());
+            FileWriter writer=new FileWriter("src/IR/output.ll");
+            writer.write(irprogram.toString());
+            writer.close();
         } catch (Error er) {
             System.err.println(er.toString());
             throw new RuntimeException();

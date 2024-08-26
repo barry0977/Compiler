@@ -51,6 +51,7 @@ public class classScope extends Scope {
             throw new semanticError("Duplicate viriable name with function: "+name,pos);
         }
         vars.put(name, type);
+        varindex.put(name,index++);
     }
 
     @Override
