@@ -60,6 +60,10 @@ public class globalScope extends Scope{
         }
     }
 
+    public int getClassSize(String name){
+        return classDecls.get(name).size;
+    }
+
     @Override
     public void addVar(String name, Type type, Position pos) {
         if(vars.containsKey(name)){

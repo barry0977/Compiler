@@ -13,6 +13,8 @@ public class ClassDecl {
     public HashMap<String, Type>vars;
     public HashMap<String, Integer>varindex;//变量在类中的顺序
     public HashMap<String, FuncDecl> funcs;
+    public boolean haveConstructor=false;
+    public int size;//变量的个数
 
     public ClassDecl(String name){
         this.name = name;
@@ -36,7 +38,10 @@ public class ClassDecl {
         for(var funcDef : classdef.funcs){
             this.funcs.put(funcDef.name,new FuncDecl(funcDef));
         }
-
+        this.size=classdef.vars.size();
+        if(classdef.construct!=null){
+            this.haveConstructor=true;
+        }
     }
 
     public int getIndex(String name){

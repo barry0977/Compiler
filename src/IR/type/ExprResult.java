@@ -7,6 +7,8 @@ public class ExprResult {
     public boolean isPtr=false;
     public String PtrType;
 
+    public ExprResult(){}
+
     public ExprResult(ExprResult obj) {
         this.temp=obj.temp;
         this.isConst=obj.isConst;

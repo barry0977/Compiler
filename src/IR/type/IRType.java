@@ -6,15 +6,19 @@ public class IRType {
     public String typename;
 
     public IRType(Type type) {
-        if (type.isVoid){
-            typename = "void";
-        }else if(type.isInt){
-            typename = "i32";
-        }else if(type.isBool){
-            typename = "i1";
-        }else{
-            typename = "ptr";
+        if(type.dim==0){
+            if (type.isVoid){
+                typename = "void";
+                return;
+            }else if(type.isInt){
+                typename = "i32";
+                return;
+            }else if(type.isBool){
+                typename = "i1";
+                return;
+            }
         }
+        typename="ptr";
     }
 
     public IRType(String typename) {

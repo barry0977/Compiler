@@ -1,7 +1,9 @@
 import AST.ProgramNode;
 import Frontend.ASTBuilder;
+import Frontend.IRBuilder;
 import Frontend.SemanticChecker;
 import Frontend.SymbolCollector;
+import IR.IRProgram;
 import Parser.MxLexer;
 import Parser.MxParser;
 import Util.MxErrorListener;
@@ -31,6 +33,9 @@ public class Main {
             ASTRoot=(ProgramNode) astBuilder.visit(parseTreeRoot);
             new SymbolCollector(gScope,gScope2).visit(ASTRoot);
             new SemanticChecker(gScope).visit(ASTRoot);
+            //IR
+            IRProgram irprogram = new IRProgram();
+            new IRBuilder(irprogram,gScope2).visit(ASTRoot);
 
         } catch (Error er) {
             System.err.println(er.toString());

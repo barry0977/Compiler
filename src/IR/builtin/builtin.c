@@ -109,3 +109,9 @@ int array_size(void *arr) {
 void *_malloc(int n){ //分配4n个字节
     return malloc((size_t)(4 * n));
 }
+
+void *_malloc_array(int length){
+    int *res=(int *)malloc(length*4+4);
+    res[0]=length;
+    return res+1;
+}

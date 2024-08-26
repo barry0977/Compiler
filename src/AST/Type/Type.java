@@ -38,6 +38,25 @@ public class Type {
         this.dim = t.dim;
     }
 
+    public Type(MxParser.TypenameContext ctx){
+        String type=ctx.getText();
+        if(type.equals("int")){
+            this.isInt = true;
+        }else if(type.equals("bool")){
+            this.isBool = true;
+        }else if(type.equals("string")){
+            this.isString = true;
+            this.typeName= "string";
+        }else if(type.equals("void")){
+            this.isVoid = true;
+        }else if(type.equals("null")){
+            this.isNull = true;
+        }else{
+            this.isClass = true;
+            this.typeName = type;
+        }
+    }
+
     public Type(MxParser.TypeContext ctx){
         String type=ctx.typename().getText();
         if(type.equals("int")){
@@ -55,6 +74,7 @@ public class Type {
             this.isClass = true;
             this.typeName = type;
         }
+
         this.dim=ctx.LeftBracket().size();
     }
 

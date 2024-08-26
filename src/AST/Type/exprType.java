@@ -28,6 +28,10 @@ public class exprType extends Type {
         this.isClass=false;
     }
 
+    public exprType(MxParser.TypenameContext ctx){
+        super(ctx);
+    }
+
     public exprType(MxParser.TypeContext ctx){
         super(ctx);
     }

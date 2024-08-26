@@ -188,7 +188,7 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
 
     @Override public ASTNode visitNewVarExpr(MxParser.NewVarExprContext ctx) {
         NewVarExprNode newVarExprNode=new NewVarExprNode(new Position(ctx));
-        newVarExprNode.type=new exprType(ctx.type());
+        newVarExprNode.type=new exprType(ctx.typename());
         return newVarExprNode;
     }
 
@@ -300,7 +300,7 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
 
     @Override public ASTNode visitNewArrayExpr(MxParser.NewArrayExprContext ctx) {
         NewArrayExprNode newArrayExprNode=new NewArrayExprNode(new Position(ctx));
-        newArrayExprNode.type=new exprType(ctx.type());
+        newArrayExprNode.type=new exprType(ctx.typename());
         newArrayExprNode.type.dim=ctx.LeftBracket().size();
         //设定的长度必须连续出现在前面的[]中
         for(int i=0;i<ctx.expression().size();i++){

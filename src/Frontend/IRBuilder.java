@@ -21,6 +21,7 @@ import Util.error.semanticError;
 import Util.scope.*;
 
 import java.util.ArrayList;
+import java.util.Currency;
 
 public class IRBuilder implements ASTVisitor {
     IRProgram program;
@@ -60,7 +61,9 @@ public class IRBuilder implements ASTVisitor {
         for(var func:it.funcs){
             func.accept(this);
         }
-        it.construct.accept(this);
+        if(it.construct != null){
+            it.construct.accept(this);
+        }
         curScope=curScope.parent;
     }
 
@@ -136,7 +139,7 @@ public class IRBuilder implements ASTVisitor {
             }
         }
         for(var x:it.vars){
-            if(!(curScope instanceof classScope)){//类里面的变量symbolcollect时已经加过了
+            if(!(curScope instanceof classScope)){//不是类里面的变量symbolcollect时已经加过了
                 curScope.addVar(x.first,it.vartype,it.pos);
             }
         }
@@ -151,7 +154,6 @@ public class IRBuilder implements ASTVisitor {
         funcDef.entry.addIns(new Alloca("%this.addr","ptr"));
         funcDef.entry.addIns(new Store("ptr","%this","%this.addr"));
         funcDef.returntype=new IRType("void");
-        curBlock=funcDef.entry;
         program.funcs.add(funcDef);
         this.curFunc=funcDef;
         this.curBlock=funcDef.entry;
@@ -309,7 +311,27 @@ public class IRBuilder implements ASTVisitor {
     public void visit(EmptyStmtNode it){}
 
     public void visit(ArrayExprNode it){
-        //TODO
+        it.array.accept(this);
+        String array=lastExpr.temp;
+        it.index.accept(this);
+        String index=lastExpr.temp;
+
+        int ans=curFunc.cnt++;
+        Getelementptr getptr=new Getelementptr();
+        getptr.result="%"+ans;
+        getptr.pointer=array;
+        getptr.type="ptr";
+        getptr.types.add("i32");
+        getptr.idx.add(index);
+        curBlock.addIns(getptr);
+        int tmp=curFunc.cnt++;
+        //ArrayExpr是左值，需要load成右值
+        curBlock.addIns(new Load("%"+tmp,new IRType(it.type).toString(),"%"+ans));
+        lastExpr.temp="%"+tmp;
+        lastExpr.isConst=false;
+        lastExpr.PtrName="%"+ans;
+        lastExpr.PtrType=new IRType(it.type).toString();
+        lastExpr.isPtr=true;
     }
 
     public void visit(AssignExprNode it){
@@ -357,14 +379,17 @@ public class IRBuilder implements ASTVisitor {
                 }else{//局部变量
                     lastExpr.PtrName="%"+it.name+"."+target.depth+"."+target.order;
                 }
-                int numname=curFunc.cnt++;
-                lastExpr.temp="%"+numname;
                 lastExpr.isPtr=true;
                 lastExpr.PtrType=it.type.getType();//指针指向的类型
                 lastExpr.isConst=false;
+                //Identifier是左值，需要load成右值返回
+                int numname=curFunc.cnt++;
+                lastExpr.temp="%"+numname;
                 curBlock.addIns(new Load(lastExpr.temp,new IRType(it.type).toString(),lastExpr.PtrName));
             }
         }else if(it.isThis){
+            lastExpr.temp="%this.this";
+            lastExpr.isConst=false;
             lastExpr.PtrName="%this.this";
             lastExpr.isPtr=true;
             lastExpr.PtrType=it.type.getType();
@@ -375,11 +400,12 @@ public class IRBuilder implements ASTVisitor {
             lastExpr.PtrName="@.str."+def.label;
             lastExpr.PtrType="ptr";
         }else if(it.isNull){
-            //TODO
-        }else{
-
+            lastExpr.temp=null;
+        }else{//bool,int
+            lastExpr.temp=it.value;
+            lastExpr.isConst=true;
+            lastExpr.isPtr=false;
         }
-
     }
 
     public void visit(BinaryExprNode it){
@@ -520,7 +546,14 @@ public class IRBuilder implements ASTVisitor {
     public void visit(MemberExprNode it) {
         it.obj.accept(this);//获取属于的类的this指针
         if(it.obj.type.dim>0){//数组，只能调用size
-            //TODO
+            int res=curFunc.cnt++;
+            Call ins=new Call("%"+res,"i32","array_size");
+            ins.ArgsTy.add("ptr");
+            ins.ArgsVal.add(lastExpr.PtrName);
+            curBlock.addIns(ins);
+            lastExpr.temp="%"+res;
+            lastExpr.isConst=false;
+            lastExpr.isPtr=false;
         }else{
             //寻找所在的类
             ClassDecl class_ = gScope.getClass(it.obj.type.typeName);//从全局变量里面找到类
@@ -549,20 +582,112 @@ public class IRBuilder implements ASTVisitor {
                 lastExpr.isPtr=true;
                 lastExpr.PtrName= ins.result;
                 lastExpr.PtrType=var.getType();
+                //成员变量是左值，需要load转换为右值
                 int tmp=curFunc.cnt++;
                 lastExpr.temp="%"+tmp;
                 lastExpr.isConst=false;
-                curBlock.addIns(new Load(lastExpr.temp,new IRType(var).toString(),lastExpr.PtrName));//Load指令获取临时值
+                curBlock.addIns(new Load(lastExpr.temp,new IRType(var).toString(),lastExpr.PtrName));
                 return;
             }
         }
     }
 
+    private ExprResult NewArray(ArrayList<String>sizelist,int layer){
+        if(layer==sizelist.size()-1){//是最底层,int和bool直接存，其余存指针
+            ExprResult ans=new ExprResult();
+            var size=sizelist.get(layer);
+            int ret=curFunc.cnt++;
+            //给数组分配空间
+            Call ins=new Call("%"+ret,"ptr","_malloc_array");
+            ins.ArgsTy.add("i32");
+            ins.ArgsVal.add(size);
+            curBlock.addIns(ins);
+            ans.temp="%"+ret;
+            ans.isConst=false;
+            ans.isPtr=false;
+            return ans;
+        }
+
+        var size=sizelist.get(layer);
+        int ret=curFunc.cnt++;
+        Call ins=new Call("%"+ret,"ptr","_malloc_array");
+        ins.ArgsTy.add("i32");
+        ins.ArgsVal.add(size);
+        curBlock.addIns(ins);
+
+        //for.init:int i=0;
+        int initial=curFunc.cnt++;
+        curBlock.addIns(new Alloca("%"+initial,"i32"));
+        curBlock.addIns(new Store("i32","0","%"+initial));
+        curBlock.addIns(new Br("for.cond.%"+initial));
+
+        //for.cond:i<size;
+        int tmpi=curFunc.cnt++;
+        curBlock=curFunc.addBlock(new IRBlock("for.cond.%"+initial));
+        curBlock.addIns(new Load("%"+tmpi,"i32","%"+initial));
+        int cmp=curFunc.cnt++;
+        curBlock.addIns(new Icmp("%"+cmp,"<","i32","%"+tmpi,size));
+        curBlock.addIns(new Br("%"+cmp,"for.body.%"+initial,"for.end.%"+initial));
+
+        //for.body:ret[i]=NewArray(size)
+        curBlock=curFunc.addBlock(new IRBlock("for.body.%"+initial));
+        int arrayelem=curFunc.cnt++;
+        Getelementptr getptr=new Getelementptr();
+        getptr.result="%"+arrayelem;
+        getptr.type="ptr";
+        getptr.pointer="%"+ret;
+        getptr.types.add("i32");
+        getptr.idx.add("%"+tmpi);//取数组的一个元素，不需要i32 0
+        curBlock.addIns(getptr);
+        ExprResult ans1=NewArray(sizelist,layer+1);
+        curBlock.addIns(new Store("ptr",ans1.temp,"%"+arrayelem));
+        curBlock.addIns(new Br("for.step.%"+initial));
+
+        //for.step:i++
+        curBlock=curFunc.addBlock(new IRBlock("for.step.%"+initial));
+        int next=curFunc.cnt++;
+        curBlock.addIns(new Binary("+","i32","%"+tmpi,"1","%"+next));
+        curBlock.addIns(new Store("i32","%"+next,"%"+initial));
+        curBlock.addIns(new Br("for.cond.%"+initial));
+
+        //for.end
+        curBlock=curFunc.addBlock(new IRBlock("for.end.%"+initial));
+        ExprResult res=new ExprResult();
+        res.temp="%"+ret;
+        res.isConst=false;
+        res.isPtr=false;
+        return res;
+    }
+
+
     public void visit(NewArrayExprNode it){
+        if(it.init != null){
+            it.init.accept(this);
+        }else{
+            ArrayList<String>sizelist=new ArrayList<>();
+            for(var size:it.sizelist){
+                size.accept(this);
+                sizelist.add(lastExpr.temp);
+            }
+            lastExpr=new ExprResult(NewArray(sizelist,0));
+        }
     }
 
     public void visit(NewVarExprNode it){
-        Call ins=new Call()
+        int tmp=curFunc.cnt++;
+        Call ins=new Call("%"+tmp,"ptr","_malloc");
+        ins.ArgsTy.add("i32");
+        String args=gScope.getClassSize(it.type.typeName)+"";
+        ins.ArgsVal.add(args);
+        curBlock.addIns(ins);
+        if(gScope.classDecls.get(it.type.typeName).haveConstructor){//如果有构造函数，则要调用
+            Call constructor=new Call(null,"void",it.type.typeName+ "::"+it.type.typeName);
+            constructor.ArgsTy.add("ptr");
+            constructor.ArgsVal.add("%"+tmp);
+        }
+        lastExpr.temp="%"+tmp;
+        lastExpr.isConst=false;
+        lastExpr.isPtr=false;
     }
 
     public void visit(UnaryExprNode it){
@@ -667,6 +792,26 @@ public class IRBuilder implements ASTVisitor {
     }
 
     public void visit(ArrayConstNode it) {
-
+        int addr=curFunc.cnt++;
+        Call ins=new Call("%"+addr,"ptr","_malloc_array");
+        ins.ArgsTy.add("i32");
+        ins.ArgsVal.add(it.elements.size()+"");
+        curBlock.addIns(ins);
+        for(int i=0;i<it.elements.size();i++){
+            it.elements.get(i).accept(this);
+            int tmp=curFunc.cnt++;
+            Getelementptr getptr=new Getelementptr();
+            getptr.result="%"+tmp;
+            getptr.pointer="%"+addr;
+            getptr.type="ptr";
+            getptr.types.add("i32");
+            getptr.idx.add(i+"");
+            curBlock.addIns(getptr);
+            String type=new IRType(it.elements.get(i).type).toString();//元素类型
+            curBlock.addIns(new Store(lastExpr.temp,type,"%"+tmp));
+        }
+        lastExpr.temp="%"+addr;
+        lastExpr.isConst=false;
+        lastExpr.isPtr=false;
     }
 }
