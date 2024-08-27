@@ -176,8 +176,12 @@ public class IRBuilder implements ASTVisitor {
         for(var stmt:it.body){
             stmt.accept(this);
         }
-        if(curBlock.terminalStmt==null){//main函数可能没有return语句
-            curBlock.terminalStmt=new Ret("i32","0");
+        if(curBlock.terminalStmt==null){
+            if(it.returntype.isVoid){//void函数可能没有return语句
+                curBlock.terminalStmt=new Ret("void",null);
+            }else{//main函数可能没有return语句
+                curBlock.terminalStmt=new Ret("i32","0");
+            }
         }
         curScope=curScope.parent;
     }
@@ -552,9 +556,10 @@ public class IRBuilder implements ASTVisitor {
         int name=curFunc.cnt++;
         //System.err.println("Binary4 curFunc.cnt="+curFunc.cnt);
         if(it.lhs.type.dim==0&&it.lhs.type.isString){//如果是字符串
-            Call ins=new Call("%"+name,"ptr","string.add");
+            Call ins=new Call("%"+name,"i1","string.add");
             if(it.opCode.equals("+")){
                 ins.FunctionName="string.add";
+                ins.ResultType="ptr";//字符串相加
             }else if(it.opCode.equals("==")){
                 ins.FunctionName="string.equal";
             }else if(it.opCode.equals("!=")){
@@ -666,7 +671,6 @@ public class IRBuilder implements ASTVisitor {
     public void visit(MemberExprNode it) {
         it.obj.accept(this);//获取属于的类的this指针
         if(it.obj.type.dim>0){//数组，只能调用size
-            int res=curFunc.cnt++;
             lastExpr.temp=lastExpr.temp;
             lastExpr.isConst=false;
             lastExpr.isPtr=false;

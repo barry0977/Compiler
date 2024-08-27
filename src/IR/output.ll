@@ -19,95 +19,109 @@ declare i1 @string.greaterOrEqual(ptr, ptr)
 declare i32 @array.size(ptr)
 declare ptr @_malloc(i32)
 declare ptr @_malloc_array(i32)
-%class.TA = type {ptr, i32 }
-@init_anger = global i32 100
-@work_anger = global i32 10
-@.str.0 = private unnamed_addr constant [3 x i8] c", \00"
-@.str.1 = private unnamed_addr constant [22 x i8] c" enjoys this work. XD\00"
-@.str.2 = private unnamed_addr constant [3 x i8] c", \00"
-@.str.3 = private unnamed_addr constant [23 x i8] c" wants to give up!!!!!\00"
-@.str.4 = private unnamed_addr constant [15 x i8] c"the leading TA\00"
-@.str.5 = private unnamed_addr constant [16 x i8] c"the striking TA\00"
-@.str.6 = private unnamed_addr constant [3 x i8] c"MR\00"
-@.str.7 = private unnamed_addr constant [5 x i8] c"Mars\00"
-@.str.8 = private unnamed_addr constant [5 x i8] c"Mars\00"
-define void @work(ptr %st, ptr %ta) {
+@.str.0 = private unnamed_addr constant [4 x i8] c"aaa\00"
+@.str.1 = private unnamed_addr constant [4 x i8] c"bbb\00"
+@.str.2 = private unnamed_addr constant [4 x i8] c"ccc\00"
+@.str.3 = private unnamed_addr constant [4 x i8] c"ddd\00"
+@.str.4 = private unnamed_addr constant [4 x i8] c"eee\00"
+define void @foo1() {
 entry:
-	%st.1.2 = alloca ptr;
-	store ptr %st, ptr %st.1.2;
-	%ta.1.2 = alloca ptr;
-	store ptr %ta, ptr %ta.1.2;
-	%0 = load ptr, ptr %ta.1.2;
-	%1 = getelementptr %class.TA, ptr %0, i32 0, i32 1;
-	%2 = load i32, ptr %1;
-	%3 = icmp sle i32 %2, 100;
-	br i1 %3, label %if.then.2.1,label %if.else.2.1;
-if.then.2.1:
-	%4 = load ptr, ptr %st.1.2;
-	%5 = call ptr @string.add(ptr %4, ptr @.str.0)
-	%6 = load ptr, ptr %ta.1.2;
-	%7 = getelementptr %class.TA, ptr %6, i32 0, i32 0;
-	%8 = load ptr, ptr %7;
-	%9 = call ptr @string.add(ptr %5, ptr %8)
-	%10 = call ptr @string.add(ptr %9, ptr @.str.1)
-	call void @println(ptr %10)
-	br label %if.end.2.1;
-if.else.2.1:
-	%11 = load ptr, ptr %st.1.2;
-	%12 = call ptr @string.add(ptr %11, ptr @.str.2)
-	%13 = load ptr, ptr %ta.1.2;
-	%14 = getelementptr %class.TA, ptr %13, i32 0, i32 0;
-	%15 = load ptr, ptr %14;
-	%16 = call ptr @string.add(ptr %12, ptr %15)
-	%17 = call ptr @string.add(ptr %16, ptr @.str.3)
-	call void @println(ptr %17)
-	br label %if.end.2.1;
-if.end.2.1:
-	%18 = load ptr, ptr %ta.1.2;
-	%19 = getelementptr %class.TA, ptr %18, i32 0, i32 1;
-	%20 = load i32, ptr %19;
-	%21 = load ptr, ptr %ta.1.2;
-	%22 = getelementptr %class.TA, ptr %21, i32 0, i32 1;
-	%23 = load i32, ptr %22;
-	%24 = load i32, ptr @work_anger;
-	%25 = add i32 %23, %24
-	store i32 %25, ptr %19;
+	call void @println(ptr @.str.0)
+	ret i32 0;
+}
+
+define void @foo2() {
+entry:
+	call void @println(ptr @.str.1)
+	ret i32 0;
+}
+
+define void @foo3() {
+entry:
+	call void @println(ptr @.str.2)
+	ret i32 0;
+}
+
+define void @foo4() {
+entry:
+	call void @println(ptr @.str.3)
+	ret i32 0;
+}
+
+define void @foo5() {
+entry:
+	call void @println(ptr @.str.4)
 	ret i32 0;
 }
 
 define i32 @main() {
 entry:
-	%mr.1.3 = alloca ptr;
-	%mars.1.3 = alloca ptr;
-	%0 = load ptr, ptr %mr.1.3;
-	%1 = call ptr @_malloc(i32 2)
-	store ptr %1, ptr %mr.1.3;
-	%2 = load ptr, ptr %mr.1.3;
-	%3 = getelementptr %class.TA, ptr %2, i32 0, i32 0;
-	%4 = load ptr, ptr %3;
-	store ptr @.str.4, ptr %3;
-	%5 = load ptr, ptr %mr.1.3;
-	%6 = getelementptr %class.TA, ptr %5, i32 0, i32 1;
-	%7 = load i32, ptr %6;
-	store i32 0, ptr %6;
-	%8 = load ptr, ptr %mars.1.3;
-	%9 = call ptr @_malloc(i32 2)
-	store ptr %9, ptr %mars.1.3;
-	%10 = load ptr, ptr %mars.1.3;
-	%11 = getelementptr %class.TA, ptr %10, i32 0, i32 0;
-	%12 = load ptr, ptr %11;
-	store ptr @.str.5, ptr %11;
-	%13 = load ptr, ptr %mars.1.3;
-	%14 = getelementptr %class.TA, ptr %13, i32 0, i32 1;
-	%15 = load i32, ptr %14;
-	%16 = load i32, ptr @init_anger;
-	store i32 %16, ptr %14;
-	%17 = load ptr, ptr %mr.1.3;
-	call void @work(ptr @.str.6, ptr %17)
-	%18 = load ptr, ptr %mars.1.3;
-	call void @work(ptr @.str.7, ptr %18)
-	%19 = load ptr, ptr %mars.1.3;
-	call void @work(ptr @.str.8, ptr %19)
+	%a.1.6 = alloca i32;
+	%0 = call i32 @getInt()
+	store i32 %0, ptr %a.1.6;
+	%b.1.6 = alloca i32;
+	%1 = call i32 @getInt()
+	store i32 %1, ptr %b.1.6;
+	%c.1.6 = alloca i32;
+	%2 = call i32 @getInt()
+	store i32 %2, ptr %c.1.6;
+	%3 = load i32, ptr %a.1.6;
+	%4 = add i32 %3, 1
+	store i32 %4, ptr %a.1.6;
+	%5 = load i32, ptr %b.1.6;
+	%6 = icmp eq i32 %3, %5;
+	br i1 %6, label %cond.true.0,label %cond.false.0;
+cond.true.0:
+	%7 = load i32, ptr %a.1.6;
+	%8 = add i32 %7, 1
+	store i32 %8, ptr %a.1.6;
+	%9 = load i32, ptr %b.1.6;
+	%10 = icmp eq i32 %7, %9;
+	br i1 %10, label %cond.true.1,label %cond.false.1;
+cond.true.1:
+	call void @foo1()
+	br label %cond.end.1;
+cond.false.1:
+	call void @foo2()
+	br label %cond.end.1;
+cond.end.1:
+	br label %cond.end.0;
+cond.false.0:
+	%11 = load i32, ptr %a.1.6;
+	%12 = add i32 %11, 1
+	store i32 %12, ptr %a.1.6;
+	%13 = load i32, ptr %b.1.6;
+	%14 = icmp eq i32 %11, %13;
+	br i1 %14, label %cond.true.2,label %cond.false.2;
+cond.true.2:
+	%15 = load i32, ptr %b.1.6;
+	%16 = add i32 %15, 1
+	store i32 %16, ptr %b.1.6;
+	%17 = load i32, ptr %c.1.6;
+	%18 = add i32 %17, 1
+	store i32 %18, ptr %c.1.6;
+	%19 = icmp eq i32 %16, %17;
+	br i1 %19, label %cond.true.3,label %cond.false.3;
+cond.true.3:
+	call void @foo3()
+	br label %cond.end.3;
+cond.false.3:
+	call void @foo4()
+	br label %cond.end.3;
+cond.end.3:
+	br label %cond.end.2;
+cond.false.2:
+	call void @foo5()
+	br label %cond.end.2;
+cond.end.2:
+	br label %cond.end.0;
+cond.end.0:
+	%20 = load i32, ptr %a.1.6;
+	call void @printlnInt(i32 %20)
+	%21 = load i32, ptr %b.1.6;
+	call void @printlnInt(i32 %21)
+	%22 = load i32, ptr %c.1.6;
+	call void @printlnInt(i32 %22)
 	ret i32 0;
 }
 
