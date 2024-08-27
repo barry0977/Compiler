@@ -1,8 +1,10 @@
 package IR.module;
 
+import IR.IRNode;
+import IR.IRVisitor;
 import IR.type.IRType;
 
-public class IRGlobalVarDef {
+public class IRGlobalVarDef extends IRNode {
     public String name;
     public IRType type;
     public String value=null;
@@ -23,6 +25,7 @@ public class IRGlobalVarDef {
         }
     }
 
+    @Override
     public String toString(){
         String res= "@"+name+" = global "+type.toString();
         if(value==null){
@@ -31,5 +34,10 @@ public class IRGlobalVarDef {
             res+=" "+value+"\n";
         }
         return res;
+    }
+
+    @Override
+    public void accept(IRVisitor visitor) {
+        visitor.visit(this);
     }
 }

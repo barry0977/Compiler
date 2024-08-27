@@ -1,5 +1,7 @@
 package IR.instr;
 
+import IR.IRVisitor;
+
 public class Select extends Instruction {
     public String result;
     public String cond;
@@ -19,5 +21,10 @@ public class Select extends Instruction {
     @Override
     public String toString() {
         return "\t"+result + " = select i1 " + cond + ", " + ty + " " + val1 + ", " + ty +" "+ val2+"\n";
+    }
+
+    @Override
+    public void accept(IRVisitor visitor) {
+        visitor.visit(this);
     }
 }

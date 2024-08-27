@@ -1,5 +1,7 @@
 package IR.instr;
 
+import IR.IRVisitor;
+
 public class Br extends Instruction {
     public String cond,iftrue,iffalse;
     public String dest;
@@ -26,5 +28,10 @@ public class Br extends Instruction {
         }else{
             return "\t"+"br label %"+dest+";\n";
         }
+    }
+
+    @Override
+    public void accept(IRVisitor visitor) {
+        visitor.visit(this);
     }
 }

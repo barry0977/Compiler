@@ -1,5 +1,7 @@
 package IR.instr;
 
+import IR.IRVisitor;
+
 public class Alloca extends Instruction{
     public String result,type;
 
@@ -13,5 +15,10 @@ public class Alloca extends Instruction{
     @Override
     public String toString() {
         return "\t"+result+" = alloca "+type+";\n";
+    }
+
+    @Override
+    public void accept(IRVisitor visitor) {
+        visitor.visit(this);
     }
 }

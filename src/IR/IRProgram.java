@@ -7,7 +7,7 @@ import IR.module.IRGlobalVarDef;
 
 import java.util.ArrayList;
 
-public class IRProgram {
+public class IRProgram extends IRNode{
     public ArrayList<IRGlobalVarDef> globalvars;
     public ArrayList<IRClassDef>classs;
     public ArrayList<IRFuncDef>funcs;
@@ -36,5 +36,9 @@ public class IRProgram {
             sb.append(f.toString());
         }
         return sb.toString();
+    }
+
+    public void accept(IRVisitor visitor){
+        visitor.visit(this);
     }
 }

@@ -1,11 +1,11 @@
 package IR.module;
 
-import IR.IRProgram;
-import IR.type.IRType;
+import IR.IRNode;
+import IR.IRVisitor;
 
 import java.util.ArrayList;
 
-public class IRFuncDecl {
+public class IRFuncDecl extends IRNode {
     public String name;
     public String returntype;
     public ArrayList<String> paramtypes;
@@ -16,6 +16,7 @@ public class IRFuncDecl {
         this.paramtypes = new ArrayList<>();
     }
 
+    @Override
     public String toString(){
         StringBuilder str=new StringBuilder();
         str.append("declare "+returntype+" @"+name+"(");
@@ -25,5 +26,10 @@ public class IRFuncDecl {
         }
         str.append(")\n");
         return str.toString();
+    }
+
+    @Override
+    public void accept(IRVisitor visitor){
+        visitor.visit(this);
     }
 }

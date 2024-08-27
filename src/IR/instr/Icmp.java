@@ -1,5 +1,7 @@
 package IR.instr;
 
+import IR.IRVisitor;
+
 public class Icmp extends Instruction{
     public String result;
     public String cond;
@@ -44,5 +46,10 @@ public class Icmp extends Instruction{
     @Override
     public String toString(){
         return "\t"+result+" = icmp "+cond+" "+ty+" "+op1+", "+op2+";\n";
+    }
+
+    @Override
+    public void accept(IRVisitor visitor) {
+        visitor.visit(this);
     }
 }

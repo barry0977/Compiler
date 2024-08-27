@@ -1,5 +1,7 @@
 package IR.module;
 
+import IR.IRVisitor;
+
 public class IRStringDef extends IRGlobalVarDef{
     public String label;
     public int length;
@@ -83,5 +85,10 @@ public class IRStringDef extends IRGlobalVarDef{
         sb.append(value);
         sb.append("\"\n");
         return sb.toString();
+    }
+
+    @Override
+    public void accept(IRVisitor visitor) {
+        visitor.visit(this);
     }
 }

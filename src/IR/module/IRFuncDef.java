@@ -1,11 +1,13 @@
 package IR.module;
 
 import IR.IRBlock;
+import IR.IRNode;
+import IR.IRVisitor;
 import IR.type.IRType;
 
 import java.util.ArrayList;
 
-public class IRFuncDef {
+public class IRFuncDef extends IRNode {
     public String name;
     public IRType returntype;//返回类型
     public ArrayList<IRType> paramtypes;//参数类型
@@ -36,6 +38,7 @@ public class IRFuncDef {
         return block;
     }
 
+    @Override
     public String toString(){
         StringBuilder str=new StringBuilder();
         str.append("define ");
@@ -61,5 +64,10 @@ public class IRFuncDef {
         }
         str.append("}\n\n");
         return str.toString();
+    }
+
+    @Override
+    public void accept(IRVisitor visitor){
+        visitor.visit(this);
     }
 }

@@ -1,5 +1,7 @@
 package IR.instr;
 
+import IR.IRVisitor;
+
 import java.util.ArrayList;
 
 public class Getelementptr extends Instruction{
@@ -22,5 +24,10 @@ public class Getelementptr extends Instruction{
         }
         sb.append(";\n");
         return sb.toString();
+    }
+
+    @Override
+    public void accept(IRVisitor visitor) {
+        visitor.visit(this);
     }
 }

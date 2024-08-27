@@ -1,5 +1,7 @@
 package IR.instr;
 
+import IR.IRVisitor;
+
 import java.util.ArrayList;
 
 public class Phi extends Instruction {
@@ -40,5 +42,10 @@ public class Phi extends Instruction {
         }
         sb.append("\n");
         return sb.toString();
+    }
+
+    @Override
+    public void accept(IRVisitor visitor) {
+        visitor.visit(this);
     }
 }

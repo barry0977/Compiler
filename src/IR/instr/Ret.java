@@ -1,5 +1,7 @@
 package IR.instr;
 
+import IR.IRVisitor;
+
 public class Ret extends Instruction{
     public String type;
     public String value;
@@ -18,5 +20,10 @@ public class Ret extends Instruction{
         }else{
             return "\tret "+type+" "+value+";\n";
         }
+    }
+
+    @Override
+    public void accept(IRVisitor visitor) {
+        visitor.visit(this);
     }
 }

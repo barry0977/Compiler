@@ -4,7 +4,7 @@ import IR.instr.*;
 
 import java.util.ArrayList;
 
-public class IRBlock {
+public class IRBlock extends IRNode {
     public String label;
     public ArrayList<Instruction> statements;
     public Instruction terminalStmt=null;
@@ -39,6 +39,7 @@ public class IRBlock {
         }
     }
 
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(label).append(":\n");
@@ -49,5 +50,10 @@ public class IRBlock {
             sb.append(terminalStmt.toString());
         }
         return sb.toString();
+    }
+
+    @Override
+    public void accept(IRVisitor visitor) {
+        visitor.visit(this);
     }
 }

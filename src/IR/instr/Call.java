@@ -1,5 +1,7 @@
 package IR.instr;
 
+import IR.IRVisitor;
+
 import java.util.ArrayList;
 
 public class Call extends Instruction {
@@ -46,5 +48,10 @@ public class Call extends Instruction {
         }
         builder.append(")\n");
         return builder.toString();
+    }
+
+    @Override
+    public void accept(IRVisitor visitor) {
+        visitor.visit(this);
     }
 }

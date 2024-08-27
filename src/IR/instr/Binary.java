@@ -1,5 +1,7 @@
 package IR.instr;
 
+import IR.IRVisitor;
+
 public class Binary extends Instruction {
     public String op;
     public String lhs,rhs;
@@ -54,5 +56,10 @@ public class Binary extends Instruction {
     @Override
     public String toString(){
         return "\t"+result+" = "+op+" "+ty+" "+lhs+", "+rhs+"\n";
+    }
+
+    @Override
+    public void accept(IRVisitor visitor) {
+        visitor.visit(this);
     }
 }

@@ -1,10 +1,12 @@
 package IR.module;
 
+import IR.IRNode;
+import IR.IRVisitor;
 import IR.type.IRType;
 
 import java.util.ArrayList;
 
-public class IRClassDef {
+public class IRClassDef extends IRNode {
     public String name;
     public ArrayList<IRType>members;
 
@@ -12,6 +14,7 @@ public class IRClassDef {
         members = new ArrayList<>();
     }
 
+    @Override
     public String toString(){
         StringBuilder res=new StringBuilder();
         res.append("%class."+name+" = type {");
@@ -23,5 +26,10 @@ public class IRClassDef {
         }
         res.append(" }\n");
         return res.toString();
+    }
+
+    @Override
+    public void accept(IRVisitor visitor){
+        visitor.visit(this);
     }
 }
