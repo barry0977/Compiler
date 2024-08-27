@@ -810,9 +810,10 @@ public class IRBuilder implements ASTVisitor {
         ins.ArgsVal.add(args);
         curBlock.addIns(ins);
         if(gScope.classDecls.get(it.type.typeName).haveConstructor){//如果有构造函数，则要调用
-            Call constructor=new Call(null,"void",it.type.typeName+ "::"+it.type.typeName);
+            Call constructor=new Call(null,"void",it.type.typeName+ "."+it.type.typeName);
             constructor.ArgsTy.add("ptr");
             constructor.ArgsVal.add("%"+tmp);
+            curBlock.addIns(constructor);
         }
         lastExpr.temp="%"+tmp;
         lastExpr.isConst=false;
