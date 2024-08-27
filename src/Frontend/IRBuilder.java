@@ -209,7 +209,7 @@ public class IRBuilder implements ASTVisitor {
                         if(curFunc.body.isEmpty()){
                             curBlock=curFunc.entry;
                         }else{
-                            curBlock=curFunc.body.getLast();
+                            curBlock=curFunc.body.get(curFunc.body.size()-1);
                         }
                         variable.second.accept(this);
                         curBlock.addIns(new Store(new IRType(it.vartype).toString(), lastExpr.temp,"@"+variable.first));
@@ -347,6 +347,7 @@ public class IRBuilder implements ASTVisitor {
 
         curBlock=curFunc.addBlock(new IRBlock("for.body."+ord));
         if(it.body!=null){
+            curScope=new Scope(curScope);
             if(it.body instanceof BlockStmtNode){
                 for(var stmt:((BlockStmtNode) it.body).statements){
                     stmt.accept(this);
@@ -354,6 +355,7 @@ public class IRBuilder implements ASTVisitor {
             }else{
                 it.body.accept(this);
             }
+            curScope=curScope.parent;
         }
         curBlock.addIns(new Br("for.step."+ord));
 

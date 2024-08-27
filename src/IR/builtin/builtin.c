@@ -1,80 +1,80 @@
 #define bool _Bool
 typedef unsigned long size_t;
 
-int printf(const char *pattern,...);
-int sprintf(char *dest,const char *pattern,...);
-int scanf(const char *pattern,...);
-int sscanf(const char *src,const char *pattern,...);
+
+int printf(const char *pattern, ...);
+int sprintf(char *dest, const char *pattern, ...);
+int scanf(const char *pattern, ...);
+int sscanf(const char *src, const char *pattern, ...);
 size_t strlen(const char *str);
-int strcmp(const char *s1,const char *s2);
-void *memcpy(void *dest,const void *src,size_t n);
+int strcmp(const char *s1, const char *s2);
+void *memcpy(void *dest, const void *src, size_t n);
 void *malloc(size_t n);
 
-
-void print(char *str){
-    printf("%s",str);
+void print(char *str) {
+    printf("%s", str);
 }
 
-void println(char *str){
-    printf("%s\n",str);
+void println(char *str) {
+    printf("%s\n", str);
 }
 
-void printInt(int n){
-    printf("%d",n);
+void printInt(int n) {
+    printf("%d", n);
 }
 
-void printlnInt(int n){
-    printf("%d\n",n);
+void printlnInt(int n) {
+    printf("%d\n", n);
 }
 
-char *getString(){
-    char *buffer=malloc(256);
-    scanf("%s",buffer);
+char *getString() {
+    char *buffer = malloc(256);
+    scanf("%s", buffer);
     return buffer;
 }
 
-int getInt(){
+int getInt() {
     int n;
-    scanf("%d",&n);
+    scanf("%d", &n);
     return n;
 }
 
-char *toString(int n){
-    char *buffer=malloc(16);
-    sprintf(buffer,"%d",n);
+char *toString(int n) {
+    char *buffer = malloc(16);
+    sprintf(buffer, "%d", n);
     return buffer;
 }
 
-int string_length(char *str){
+int string_length(char *str) {
     return strlen(str);
 }
 
-char *string_substring(char *str,int left,int right){
-    int length=right-left;
-    char *buffer=malloc(length+1);
-    memcpy(buffer,str+left,length);
-    buffer[length]='\0';
+char *string_substring(char *str, int left, int right) {
+    int length = right - left;
+    char *buffer = malloc(length + 1);
+    memcpy(buffer, str + left, length);
+    buffer[length] = '\0';
     return buffer;
 }
 
-int string_parseInt(char *str){
+int string_parseInt(char *str) {
     int n;
-    sscanf(str,"d",&n);
+    sscanf(str, "%d", &n);
     return n;
 }
 
-int string_ord(char *str,int pos){
+int string_ord(char *str, int pos) {
     return (int)str[pos];
 }
 
-char *string_add(char *str1,char *str2){
-    int length1= strlen(str1);
-    int length2= strlen(str2);
-    int length=length1+length2;
-    char *buffer=malloc(length+1);
-    memcpy(buffer,str1,length1);
-    memcpy(buffer+length1,str2,length2);
-    buffer[length]='\0';
+char *string_add(char *str1, char *str2) {
+    int length1 = strlen(str1);
+    int length2 = strlen(str2);
+    int length = length1 + length2;
+    char *buffer = malloc(length + 1);
+    memcpy(buffer, str1, length1);
+    memcpy(buffer + length1, str2, length2);
+    buffer[length] = '\0';
     return buffer;
 }
 

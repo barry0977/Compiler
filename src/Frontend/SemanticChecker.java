@@ -190,6 +190,7 @@ public class SemanticChecker implements ASTVisitor {
             it.nextstep.accept(this);
         }
         if(it.body!=null){
+            curScope=new Scope(curScope);
             if(it.body instanceof BlockStmtNode){
                 ((BlockStmtNode) it.body).scope=curScope;
                 for(var stmt:((BlockStmtNode) it.body).statements){
@@ -198,6 +199,7 @@ public class SemanticChecker implements ASTVisitor {
             }else{
                 it.body.accept(this);
             }
+            curScope=curScope.parent;
         }
         curScope=curScope.parent;
     }
