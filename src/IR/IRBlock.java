@@ -23,8 +23,8 @@ public class IRBlock {
                     statements.add(ins);
                 }
             }
-            if(terminalStmt!=null){
-                if(!(ins instanceof Br)||(ins instanceof Ret)){
+            else if(terminalStmt!=null){
+                if(!(ins instanceof Br||ins instanceof Ret)){
                     statements.add(ins);
                 }
             }

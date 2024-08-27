@@ -12,6 +12,7 @@ public class IRFuncDef {
     public ArrayList<String> paramnames;//参数名
     public IRBlock entry;
     public int cnt=0;//用于一个函数中的匿名函数的命名
+    public int shortname=0;//用于短路求值编号
     public ArrayList<IRBlock> body;
 
     public IRFuncDef(){

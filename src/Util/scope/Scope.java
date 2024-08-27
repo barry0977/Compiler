@@ -20,7 +20,6 @@ public class Scope {
     public int depth=0;//在第几层scope
     public int order=0;//同一层中目前在第几个scope
     public int num=0;//用于记录当前scope有几个孩子
-    public int cnt=0;//用于短路求值的块的命名
     public String looplabel;
 
     public Scope(Scope parent_) {

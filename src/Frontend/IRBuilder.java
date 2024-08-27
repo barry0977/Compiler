@@ -216,7 +216,8 @@ public class IRBuilder implements ASTVisitor {
                 curFunc.entry.addIns(ins);
                 if(variable.second!=null){
                     variable.second.accept(this);
-                    curFunc.entry.addIns(new Store(ins.type,lastExpr.temp,ins.result));
+                    curBlock.addIns(new Store(ins.type,lastExpr.temp,ins.result));//防止出现这里面已经开了新块，导致用到的匿名变量在后面定义
+                    //curFunc.entry.addIns(new Store(ins.type,lastExpr.temp,ins.result));
                 }
             }
         }
@@ -404,7 +405,6 @@ public class IRBuilder implements ASTVisitor {
         String index=lastExpr.temp;
 
         int ans=curFunc.cnt++;
-        //System.err.println("Array1 curFunc.cnt="+curFunc.cnt);
         Getelementptr getptr=new Getelementptr();
         getptr.result="%"+ans;
         getptr.pointer=array;
@@ -413,7 +413,6 @@ public class IRBuilder implements ASTVisitor {
         getptr.idx.add(index);
         curBlock.addIns(getptr);
         int tmp=curFunc.cnt++;
-        //System.err.println("Array2 curFunc.cnt="+curFunc.cnt);
         //ArrayExpr是左值，需要load成右值
         curBlock.addIns(new Load("%"+tmp,new IRType(it.type).toString(),"%"+ans));
         lastExpr.temp="%"+tmp;
@@ -510,7 +509,7 @@ public class IRBuilder implements ASTVisitor {
         it.lhs.accept(this);//左操作数必须要执行
         ExprResult lhsvalue=new ExprResult(lastExpr);
         if(it.opCode.equals("&&")||it.opCode.equals("||")){
-            int ord=curScope.cnt++;//每次需要短路求值就增加这个cnt，防止block名字重复
+            int ord=curFunc.shortname++;//每次需要短路求值就增加，防止block名字重复
             int suf=curFunc.cnt++;//同一个函数中匿名变量不能重复
             curBlock.addIns(new Icmp("%"+suf,"!=","i1",lhsvalue.temp,"0"));//若为true，则说明左边为true
             if(it.opCode.equals("&&")){//若左边是false，则不用看右边
@@ -570,9 +569,9 @@ public class IRBuilder implements ASTVisitor {
                 ins.FunctionName="string.greaterOrEqual";
             }
             ins.ArgsTy.add("ptr");
-            ins.ArgsVal.add(lhsvalue.PtrName);
+            ins.ArgsVal.add(lhsvalue.temp);
             ins.ArgsTy.add("ptr");
-            ins.ArgsVal.add(rhsvalue.PtrName);
+            ins.ArgsVal.add(rhsvalue.temp);
             curBlock.addIns(ins);
             lastExpr.temp="%"+name;
             lastExpr.isConst=false;
@@ -593,17 +592,31 @@ public class IRBuilder implements ASTVisitor {
         lastExpr.isPtr=false;
     }
 
-    public void visit(ConditionExprNode it){
+    public void visit(ConditionExprNode it){//需要短路求值
         it.cond_.accept(this);
         var condvalue=lastExpr.temp;
+        int ord=curFunc.shortname++;//用于短路求值的编号
+        curBlock.addIns(new Br(condvalue,"cond.true."+ord,"cond.false."+ord));
+
+        curBlock=curFunc.addBlock(new IRBlock("cond.true."+ord));
         it.then_.accept(this);
         var truevalue=lastExpr.temp;
+        curBlock.addIns(new Br("cond.end."+ord));
+
+        curBlock=curFunc.addBlock(new IRBlock("cond.false."+ord));
         it.else_.accept(this);
         var falsevalue=lastExpr.temp;
-        int name=curFunc.cnt++;
-        String type=new IRType(it.then_.type).toString();
-        curBlock.addIns(new Select("%"+name,condvalue,type,truevalue,falsevalue));
-        lastExpr.temp="%"+name;
+        curBlock.addIns(new Br("cond.end."+ord));
+
+        curBlock=curFunc.addBlock(new IRBlock("cond.end."+ord));
+        if(truevalue==null){//调用了void函数
+            lastExpr.temp=null;
+        }else{
+            int name=curFunc.cnt++;
+            String type=new IRType(it.then_.type).toString();
+            curBlock.addIns(new Select("%"+name,condvalue,type,truevalue,falsevalue));
+            lastExpr.temp="%"+name;
+        }
         lastExpr.isConst=false;
         lastExpr.isPtr=false;
     }
@@ -642,6 +655,8 @@ public class IRBuilder implements ASTVisitor {
             int name=curFunc.cnt++;
             ins.result="%"+name;
             lastExpr.temp="%"+name;
+        }else{
+            lastExpr.temp=null;
         }
         curBlock.addIns(ins);
         lastExpr.isConst=false;
