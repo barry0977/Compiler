@@ -152,7 +152,9 @@ public class IRBuilder implements ASTVisitor {
             funcDef.entry.addIns(new Load("%this.this","ptr","this.addr"));//用于在成员函数中代替this
         }
         if(funcDef.name.equals("main")){//main函数要先调用_init_
-            funcDef.entry.addIns(new Call(null,"void","_init_"));
+            if(program.haveinit){
+                funcDef.entry.addIns(new Call(null,"void","_init_"));
+            }
         }
         for(var args:it.paraslist.Paralist){//加入参数列表
             funcDef.paramnames.add("%"+args.second);
@@ -173,6 +175,9 @@ public class IRBuilder implements ASTVisitor {
         this.curBlock=funcDef.entry;
         for(var stmt:it.body){
             stmt.accept(this);
+        }
+        if(curBlock.terminalStmt==null){//main函数可能没有return语句
+            curBlock.terminalStmt=new Ret("i32","0");
         }
         curScope=curScope.parent;
     }
@@ -236,6 +241,9 @@ public class IRBuilder implements ASTVisitor {
         this.curBlock=funcDef.entry;
         for(var stmt:it.stmts){
             stmt.accept(this);
+        }
+        if(curBlock.terminalStmt==null){//构造函数可能没有return
+            curBlock.terminalStmt=new Ret("void",null);
         }
         curScope=curScope.parent;
     }
