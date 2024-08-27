@@ -20,102 +20,86 @@ declare i32 @array.size(ptr)
 declare ptr @_malloc(i32)
 declare ptr @_malloc_array(i32)
 %class.A = type {i32 }
-@.str.0 = private unnamed_addr constant [18 x i8] c"thisisastring//\\\0A\00"
-define void @A.A(ptr %this) {
+define i32 @A.f(ptr %this) {
 entry:
 	%this.addr = alloca ptr;
 	store ptr %this, ptr %this.addr;
 	%this.this = load ptr, ptr %this.addr;
-	ret void;
+	%0 = getelementptr %class.A, ptr %this.this, i32 0, i32 0;
+	%1 = load i32, ptr %0;
+	ret i32 %1;
 }
 
-define i32 @B() {
+define ptr @A.copy(ptr %this) {
 entry:
-	%c.1.2 = alloca i32;
-	%c.2.1 = alloca i32;
-	%s.2.1 = alloca i32;
-	%0 = load i32, ptr %s.2.1;
-	%1 = add i32 %0, 1
-	%2 = load i32, ptr %c.1.2;
-	ret i32 %2;
+	%this.addr = alloca ptr;
+	store ptr %this, ptr %this.addr;
+	%this.this = load ptr, ptr %this.addr;
+	ret ptr %this.this;
 }
 
 define i32 @main() {
 entry:
-	%k.1.3 = alloca i32;
-	%u.1.3 = alloca ptr;
-	%0 = call ptr @_malloc_array(i32 3)
-	store ptr %0, ptr %u.1.3;
-	%1 = load ptr, ptr %u.1.3;
-	%2 = getelementptr ptr, ptr %1, i32 1;
-	%3 = load ptr, ptr %2;
-	%4 = call ptr @_malloc_array(i32 2)
-	store ptr %4, ptr %2;
-	%5 = load ptr, ptr %u.1.3;
-	%6 = getelementptr ptr, ptr %5, i32 3;
-	%7 = load ptr, ptr %6;
-	%8 = call ptr @_malloc_array(i32 999)
-	store ptr %8, ptr %6;
-	%9 = load ptr, ptr %u.1.3;
-	%10 = getelementptr ptr, ptr %9, i32 2;
-	%11 = load ptr, ptr %10;
-	store ptr null, ptr %10;
-	%12 = call ptr @_malloc_array(i32 2)
-	%13 = getelementptr ptr, ptr %12, i32 3;
-	%14 = load ptr, ptr %13;
-	%15 = load ptr, ptr %u.1.3;
-	store ptr null, ptr %u.1.3;
-	%s.1.3 = alloca ptr;
-	%16 = call i32 @getInt()
-	%17 = call ptr @toString(i32 %16)
-	store ptr %17, ptr %s.1.3;
-	%18 = load i32, ptr %k.1.3;
-	store i32 1, ptr %k.1.3;
-	%aa.1.3 = alloca i32;
-	br label %for.cond.0;
-for.cond.0:
-	%19 = load i32, ptr %k.1.3;
-	%20 = load ptr, ptr %s.1.3;
-	%21 = call ptr @string.add(ptr %20, ptr @.str.0)
-	%22 = call ptr @string.substring(ptr %21, i32 1, i32 3)
-	%23 = call i32 @string.ord(ptr %22, i32 0)
-	%24 = icmp slt i32 %19, %23;
-	br i1 %24, label %for.body.0,label %for.end.0;
-for.body.0:
-	%25 = call ptr @getString()
-	call void @println(ptr %25)
-	br label %for.step.0;
-for.step.0:
-	%26 = load i32, ptr %k.1.3;
-	%27 = load i32, ptr %k.1.3;
-	%28 = load ptr, ptr %u.1.3;
-	%29 = call i32 @array.size(ptr %28)
-	%30 = add i32 %27, %29
-	store i32 %30, ptr %k.1.3;
-	br label %for.cond.0;
-for.end.0:
-	br label %for.cond.1;
-for.cond.1:
-	br label %for.body.1;
-for.body.1:
-	br label %while.cond.2;
-while.cond.2:
-	br i1 1, label %while.body.2,label %while.end.2;
-while.body.2:
-	br label %while.cond.2;
-while.end.2:
-	br label %for.step.1;
-for.step.1:
-	br label %for.cond.1;
-for.end.1:
-	%31 = add i32 1, 1
-	store i32 %31, ptr %aa.1.3;
-	%32 = load i32, ptr %aa.1.3;
-	%33 = add i32 %32, 1
-	store i32 %33, ptr %aa.1.3;
-	%34 = load i32, ptr %aa.1.3;
-	%35 = add i32 %34, 1
-	store i32 %35, ptr %aa.1.3;
-	ret i32 0;
+	%hh.1.2 = alloca ptr;
+	%0 = call ptr @_malloc(i32 1)
+	store ptr %0, ptr %hh.1.2;
+	%hhhh.1.2 = alloca ptr;
+	%1 = load ptr, ptr %hh.1.2;
+	%2 = call i32 @A.f(ptr %1)
+	%3 = icmp slt i32 %2, 0;
+	%hhhhhh.1.2 = alloca ptr;
+	%ar.1.2 = alloca ptr;
+	%br.1.2 = alloca ptr;
+	br i1 %3, label %cond.true.0,label %cond.false.0;
+cond.true.0:
+	br label %cond.end.0;
+cond.false.0:
+	%4 = load ptr, ptr %hh.1.2;
+	%5 = call ptr @A.copy(ptr %4)
+	br label %cond.end.0;
+cond.end.0:
+	store ptr null, ptr %hhhh.1.2;
+	%6 = load ptr, ptr %hhhh.1.2;
+	%7 = call i32 @A.f(ptr %6)
+	%8 = icmp sgt i32 %7, 0;
+	br i1 %8, label %cond.true.1,label %cond.false.1;
+cond.true.1:
+	%9 = load ptr, ptr %hhhh.1.2;
+	%10 = call ptr @A.copy(ptr %9)
+	br label %cond.end.1;
+cond.false.1:
+	br label %cond.end.1;
+cond.end.1:
+	%11 = select i1 %8, ptr %10, ptr null
+	store ptr %11, ptr %hhhhhh.1.2;
+	%12 = call ptr @_malloc_array(i32 10)
+	store ptr %12, ptr %ar.1.2;
+	%13 = load ptr, ptr %ar.1.2;
+	%14 = getelementptr ptr, ptr %13, i32 9;
+	%15 = load i32, ptr %14;
+	%16 = load ptr, ptr %ar.1.2;
+	%17 = getelementptr ptr, ptr %16, i32 1;
+	%18 = load i32, ptr %17;
+	%19 = icmp sgt i32 %15, %18;
+	br i1 %19, label %cond.true.2,label %cond.false.2;
+cond.true.2:
+	%20 = load ptr, ptr %ar.1.2;
+	br label %cond.end.2;
+cond.false.2:
+	br label %cond.end.2;
+cond.end.2:
+	%21 = select i1 %19, ptr %20, ptr null
+	store ptr %21, ptr %br.1.2;
+	%22 = load ptr, ptr %hhhhhh.1.2;
+	%23 = call ptr @A.copy(ptr %22)
+	%24 = call ptr @A.copy(ptr %23)
+	%25 = call ptr @A.copy(ptr %24)
+	%26 = call ptr @A.copy(ptr %25)
+	%27 = call i32 @A.f(ptr %26)
+	%28 = load ptr, ptr %br.1.2;
+	%29 = getelementptr ptr, ptr %28, i32 0;
+	%30 = load i32, ptr %29;
+	%31 = add i32 %27, %30
+	ret i32 %31;
 }
 
