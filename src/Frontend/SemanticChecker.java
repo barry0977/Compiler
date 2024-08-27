@@ -422,12 +422,14 @@ public class SemanticChecker implements ASTVisitor {
             if(defscope instanceof classScope){//类成员函数
                 func=curScope.getFunc(it.func.type.funcinfo.name,true);
                 it.isClass=true;
+                it.classname=((classScope) defscope).classname;
             }else if(defscope instanceof globalScope){//普通函数
                 func=curScope.getFunc(it.func.type.funcinfo.name,true);
             }
         }else if(it.func instanceof MemberExprNode){//如果是成员函数，则之前MemberExpr已经确定
             func=it.func.type.funcinfo;
             it.isClass=true;
+            it.classname=((MemberExprNode) it.func).classname;
         }
         if(func==null){
             System.out.println("Undefined Identifier");

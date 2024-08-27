@@ -10,6 +10,7 @@ public class FuncExprNode extends ExprNode{
     public ExprNode func;
     public ArrayList<ExprNode> args;
     public boolean isClass=false;//标记是否是成员函数
+    public String classname;//如果是成员函数，标记类名
 
     public FuncExprNode(Position pos) {
         super(pos);
