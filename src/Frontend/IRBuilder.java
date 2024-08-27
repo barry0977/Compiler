@@ -263,9 +263,10 @@ public class IRBuilder implements ASTVisitor {
     public void visit(IfStmtNode it){
         curScope=new Scope(curScope);
         it.condition.accept(this);
-        curBlock.addIns(new Br(lastExpr.temp,"if.then."+curScope.depth+"."+curScope.order,"if.else."+curScope.depth+"."+curScope.order));
+        int ord=curFunc.shortname++;
+        curBlock.addIns(new Br(lastExpr.temp,"if.then."+ord,"if.else."+ord));
 
-        curBlock=curFunc.addBlock(new IRBlock("if.then."+curScope.depth+"."+curScope.order));
+        curBlock=curFunc.addBlock(new IRBlock("if.then."+ord));
         if(it.trueStmt != null){
             curScope=new Scope(curScope);
             if(it.trueStmt instanceof BlockStmtNode){
@@ -277,9 +278,9 @@ public class IRBuilder implements ASTVisitor {
             }
             curScope=curScope.parent;
         }
-        curBlock.addIns(new Br("if.end."+curScope.depth+"."+curScope.order));
+        curBlock.addIns(new Br("if.end."+ord));
 
-        curBlock=curFunc.addBlock(new IRBlock("if.else."+curScope.depth+"."+curScope.order));
+        curBlock=curFunc.addBlock(new IRBlock("if.else."+ord));
         if(it.falseStmt != null){
             curScope=new Scope(curScope);
             if(it.falseStmt instanceof BlockStmtNode){
@@ -291,9 +292,9 @@ public class IRBuilder implements ASTVisitor {
             }
             curScope=curScope.parent;
         }
-        curBlock.addIns(new Br("if.end."+curScope.depth+"."+curScope.order));
+        curBlock.addIns(new Br("if.end."+ord));
 
-        curBlock=curFunc.addBlock(new IRBlock("if.end."+curScope.depth+"."+curScope.order));
+        curBlock=curFunc.addBlock(new IRBlock("if.end."+ord));
         curScope=curScope.parent;
     }
 
@@ -301,13 +302,15 @@ public class IRBuilder implements ASTVisitor {
         it.scope=new loopScope(curScope);
         it.scope.isWhile=true;
         curScope=it.scope;
-        curBlock.addIns(new Br("while.cond."+curScope.depth+"."+curScope.order));
+        it.scope.ord=curFunc.shortname;
+        int ord=curFunc.shortname++;
+        curBlock.addIns(new Br("while.cond."+ord));
 
-        curBlock=curFunc.addBlock(new IRBlock("while.cond."+curScope.depth+"."+curScope.order));
+        curBlock=curFunc.addBlock(new IRBlock("while.cond."+ord));
         it.condition.accept(this);
-        curBlock.addIns(new Br(lastExpr.temp,"while.body."+curScope.depth+"."+curScope.order,"while.end."+curScope.depth+"."+curScope.order));
+        curBlock.addIns(new Br(lastExpr.temp,"while.body."+ord,"while.end."+ord));
 
-        curBlock=curFunc.addBlock(new IRBlock("while.body."+curScope.depth+"."+curScope.order));
+        curBlock=curFunc.addBlock(new IRBlock("while.body."+ord));
         if(it.body!=null){
             if(it.body instanceof BlockStmtNode){
                 for(var stmt:((BlockStmtNode) it.body).statements){
@@ -317,30 +320,32 @@ public class IRBuilder implements ASTVisitor {
                 it.body.accept(this);
             }
         }
-        curBlock.addIns(new Br("while.cond."+curScope.depth+"."+curScope.order));
+        curBlock.addIns(new Br("while.cond."+ord));
 
-        curBlock=curFunc.addBlock(new IRBlock("while.end."+curScope.depth+"."+curScope.order));
+        curBlock=curFunc.addBlock(new IRBlock("while.end."+ord));
         curScope=curScope.parent;
     }
 
     public void visit(ForStmtNode it){
         it.scope=new loopScope(curScope);
         it.scope.isFor=true;
+        it.scope.ord=curFunc.shortname;
         curScope=it.scope;
         if(it.initStmt != null){
             it.initStmt.accept(this);
         }
-        curBlock.addIns(new Br("for.cond."+curScope.depth+"."+curScope.order));
+        int ord=curFunc.shortname++;
+        curBlock.addIns(new Br("for.cond."+ord));
 
-        curBlock=curFunc.addBlock(new IRBlock("for.cond."+curScope.depth+"."+curScope.order));
+        curBlock=curFunc.addBlock(new IRBlock("for.cond."+ord));
         if(it.condition != null){
             it.condition.accept(this);
-            curBlock.addIns(new Br(lastExpr.temp,"for.body."+curScope.depth+"."+curScope.order,"for.end."+curScope.depth+"."+curScope.order));
+            curBlock.addIns(new Br(lastExpr.temp,"for.body."+ord,"for.end."+ord));
         }else{
-            curBlock.addIns(new Br("for.body."+curScope.depth+"."+curScope.order));
+            curBlock.addIns(new Br("for.body."+ord));
         }
 
-        curBlock=curFunc.addBlock(new IRBlock("for.body."+curScope.depth+"."+curScope.order));
+        curBlock=curFunc.addBlock(new IRBlock("for.body."+ord));
         if(it.body!=null){
             if(it.body instanceof BlockStmtNode){
                 for(var stmt:((BlockStmtNode) it.body).statements){
@@ -350,33 +355,33 @@ public class IRBuilder implements ASTVisitor {
                 it.body.accept(this);
             }
         }
-        curBlock.addIns(new Br("for.step."+curScope.depth+"."+curScope.order));
+        curBlock.addIns(new Br("for.step."+ord));
 
-        curBlock=curFunc.addBlock(new IRBlock("for.step."+curScope.depth+"."+curScope.order));
+        curBlock=curFunc.addBlock(new IRBlock("for.step."+ord));
         if(it.nextstep != null){
             it.nextstep.accept(this);
         }
-        curBlock.addIns(new Br("for.cond."+curScope.depth+"."+curScope.order));
+        curBlock.addIns(new Br("for.cond."+ord));
 
-        curBlock=curFunc.addBlock(new IRBlock("for.end."+curScope.depth+"."+curScope.order));
+        curBlock=curFunc.addBlock(new IRBlock("for.end."+ord));
         curScope=curScope.parent;
     }
 
     public void visit(BreakStmtNode it){
         loopScope loop=curScope.getLoopScope();
         if(loop.isWhile){
-            curBlock.addIns(new Br("while.end."+loop.depth+"."+loop.order));
+            curBlock.addIns(new Br("while.end."+loop.ord));
         }else{
-            curBlock.addIns(new Br("for.end."+loop.depth+"."+loop.order));
+            curBlock.addIns(new Br("for.end."+loop.ord));
         }
     }
 
     public void visit(ContinueStmtNode it){
         loopScope loop=curScope.getLoopScope();
         if(loop.isWhile){
-            curBlock.addIns(new Br("while.cond."+loop.depth+"."+loop.order));
+            curBlock.addIns(new Br("while.cond."+loop.ord));
         }else{
-            curBlock.addIns(new Br("for.step."+loop.depth+"."+loop.order));
+            curBlock.addIns(new Br("for.step."+loop.ord));
         }
     }
 
