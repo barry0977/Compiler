@@ -55,8 +55,8 @@ public class IRFuncDef {
         for(int i=0; i<body.size(); i++){
             str.append(body.get(i).toString());
         }
-        if(this.name.equals("_init")){//_init函数最后要有返回值
-            str.append("ret void\n");
+        if(this.name.equals("_init_")){//_init函数最后要有返回值
+            str.append("\tret void\n");
         }
         str.append("}\n\n");
         return str.toString();

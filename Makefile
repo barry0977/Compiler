@@ -16,7 +16,7 @@ Semall:
 
 .PHONY: IRa
 IRa:
-	./testcases/codegen/scripts/test_llvm_ir.bash 'java -cp /ulib/antlr-4.13.2-complete.jar:bin Main -emit-llvm' testcases/codegen/e2.mx src/IR/builtin/builtin.ll
+	./testcases/codegen/scripts/test_llvm_ir.bash 'java -cp /ulib/antlr-4.13.2-complete.jar:bin Main -emit-llvm' testcases/codegen/e1.mx src/IR/builtin/builtin.ll
 
 .PHONY: IRall
 IRall:

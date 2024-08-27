@@ -22,7 +22,7 @@ declare ptr @_malloc_array(i32)
 @n = global i32 0
 @a = global ptr null
 @i = global i32 0
-define void @_init() {
+define void @_init_() {
 entry:
 	%0 = call ptr @_malloc_array(i32 20)
 	store ptr %0, ptr @a;
@@ -37,9 +37,9 @@ entry:
 	%j.1.1 = alloca i32;
 	%0 = load i32, ptr %i.1.1;
 	store i32 0, ptr %i.1.1;
-	br label %for.cond.2.1;
 	%flag.2.1 = alloca i1;
 	store i1 0, ptr %flag.2.1;
+	br label %for.cond.2.1;
 for.cond.2.1:
 	%1 = load i32, ptr %i.1.1;
 	%2 = load i32, ptr @n;
@@ -76,14 +76,14 @@ for.body.3.1:
 	%26 = getelementptr ptr, ptr %19, i32 %25;
 	%27 = load i32, ptr %26;
 	%28 = icmp sgt i32 %18, %27;
-	br i1 %28, label %if.then.3.1,label %if.else.3.1;
-if.then.3.1:
+	br i1 %28, label %if.then.4.1,label %if.else.4.1;
+if.then.4.1:
 	%29 = load i1, ptr %flag.2.1;
 	store i1 1, ptr %flag.2.1;
-	br label %if.end.3.1;
-if.else.3.1:
-	br label %if.end.3.1;
-if.end.3.1:
+	br label %if.end.4.1;
+if.else.4.1:
+	br label %if.end.4.1;
+if.end.4.1:
 	br label %for.step.3.1;
 for.step.3.1:
 	%30 = load i32, ptr %j.1.1;
@@ -93,13 +93,12 @@ for.step.3.1:
 for.end.3.1:
 	%32 = load i1, ptr %flag.2.1;
 	%33 = xor i1 %32, 1
-	br i1 %33, label %if.then.2.1,label %if.else.2.1;
-if.then.2.1:
+	br i1 %33, label %if.then.3.2,label %if.else.3.2;
+if.then.3.2:
 	ret i32 1;
-	br label %if.end.2.1;
-if.else.2.1:
-	br label %if.end.2.1;
-if.end.2.1:
+if.else.3.2:
+	br label %if.end.3.2;
+if.end.3.2:
 	br label %for.step.2.1;
 for.step.2.1:
 	%34 = load i32, ptr %i.1.1;
@@ -149,16 +148,15 @@ for.body.2.2:
 	%17 = load i32, ptr @i;
 	%18 = call i32 @jud(i32 %17)
 	%19 = icmp sgt i32 %18, 0;
-	br i1 %19, label %if.then.2.2,label %if.else.2.2;
-if.then.2.2:
+	br i1 %19, label %if.then.3.1,label %if.else.3.1;
+if.then.3.1:
 	%20 = load i32, ptr @i;
 	%21 = call ptr @toString(i32 %20)
 	call void @print(ptr %21)
 	ret i32 0;
-	br label %if.end.2.2;
-if.else.2.2:
-	br label %if.end.2.2;
-if.end.2.2:
+if.else.3.1:
+	br label %if.end.3.1;
+if.end.3.1:
 	br label %for.step.2.2;
 for.step.2.2:
 	%22 = load i32, ptr @i;

@@ -38,6 +38,7 @@ public class Phi extends Instruction {
             sb.append(labels.get(i));
             sb.append(" ]");
         }
+        sb.append("\n");
         return sb.toString();
     }
 }
