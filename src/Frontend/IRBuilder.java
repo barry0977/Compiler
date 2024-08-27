@@ -142,14 +142,14 @@ public class IRBuilder implements ASTVisitor {
         if(curScope.parent instanceof globalScope){//全局函数
             funcDef.name=it.name;
         }else{//类方法，名字修改，参数要加上this
-            funcDef.name=((classScope) curScope.parent).classname+"::"+it.name;//名字前加上类名
+            funcDef.name=((classScope) curScope.parent).classname+"."+it.name;//名字前加上类名
             funcDef.paramnames.add("%this");
             funcDef.paramtypes.add(new IRType("ptr"));
             Alloca ins1=new Alloca("%this.addr","ptr");
             funcDef.entry.addIns(ins1);
-            Store ins2=new Store("ptr","%this","%this."+curScope.depth+"."+curScope.order);
+            Store ins2=new Store("ptr","%this","%this.addr");
             funcDef.entry.addIns(ins2);
-            funcDef.entry.addIns(new Load("%this.this","ptr","this.addr"));//用于在成员函数中代替this
+            funcDef.entry.addIns(new Load("%this.this","ptr","%this.addr"));//用于在成员函数中代替this
         }
         if(funcDef.name.equals("main")){//main函数要先调用_init_
             if(program.haveinit){
@@ -235,11 +235,12 @@ public class IRBuilder implements ASTVisitor {
     public void visit(ConstructNode it){
         curScope=new funcScope(curScope,new Type("void",0));
         IRFuncDef funcDef=new IRFuncDef();
-        funcDef.name=it.name+"::"+it.name;
+        funcDef.name=it.name+"."+it.name;
         funcDef.paramnames.add("%this");
         funcDef.paramtypes.add(new IRType("ptr"));
         funcDef.entry.addIns(new Alloca("%this.addr","ptr"));
         funcDef.entry.addIns(new Store("ptr","%this","%this.addr"));
+        funcDef.entry.addIns(new Load("%this.this","ptr","%this.addr"));//用于在成员函数中代替this
         funcDef.returntype=new IRType("void");
         program.funcs.add(funcDef);
         this.curFunc=funcDef;
@@ -299,7 +300,7 @@ public class IRBuilder implements ASTVisitor {
 
         curBlock=curFunc.addBlock(new IRBlock("while.cond."+curScope.depth+"."+curScope.order));
         it.condition.accept(this);
-        curBlock.addIns(new Br(lastExpr.temp,"while.body."+curScope.depth+"."+curScope.order,"while.end"+curScope.depth+"."+curScope.order));
+        curBlock.addIns(new Br(lastExpr.temp,"while.body."+curScope.depth+"."+curScope.order,"while.end."+curScope.depth+"."+curScope.order));
 
         curBlock=curFunc.addBlock(new IRBlock("while.body."+curScope.depth+"."+curScope.order));
         if(it.body!=null){
@@ -632,7 +633,7 @@ public class IRBuilder implements ASTVisitor {
         var func=it.func.type.funcinfo;
         String funcname;
         if(it.isClass){//调用类的方法
-            funcname=it.classname+"::"+func.name;
+            funcname=it.classname+"."+func.name;
             if(it.func instanceof MemberExprNode){
                 if(((MemberExprNode) it.func).obj.type.dim>0){//如果是数组，只能调用size()
                     funcname="array.size";
@@ -923,7 +924,7 @@ public class IRBuilder implements ASTVisitor {
             getptr.idx.add(i+"");
             curBlock.addIns(getptr);
             String type=new IRType(it.elements.get(i).type).toString();//元素类型
-            curBlock.addIns(new Store(lastExpr.temp,type,"%"+tmp));
+            curBlock.addIns(new Store(type,lastExpr.temp,"%"+tmp));
         }
         lastExpr.temp="%"+addr;
         lastExpr.isConst=false;
