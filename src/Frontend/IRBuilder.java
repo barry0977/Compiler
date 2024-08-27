@@ -206,7 +206,11 @@ public class IRBuilder implements ASTVisitor {
                             program.haveinit=true;
                         }
                         curFunc=Init;
-                        curBlock=curFunc.entry;
+                        if(curFunc.body.isEmpty()){
+                            curBlock=curFunc.entry;
+                        }else{
+                            curBlock=curFunc.body.getLast();
+                        }
                         variable.second.accept(this);
                         curBlock.addIns(new Store(new IRType(it.vartype).toString(), lastExpr.temp,"@"+variable.first));
                     }
@@ -221,7 +225,6 @@ public class IRBuilder implements ASTVisitor {
                 if(variable.second!=null){
                     variable.second.accept(this);
                     curBlock.addIns(new Store(ins.type,lastExpr.temp,ins.result));//防止出现这里面已经开了新块，导致用到的匿名变量在后面定义
-                    //curFunc.entry.addIns(new Store(ins.type,lastExpr.temp,ins.result));
                 }
             }
         }
@@ -295,7 +298,9 @@ public class IRBuilder implements ASTVisitor {
     }
 
     public void visit(WhileStmtNode it){
-        curScope=new loopScope(curScope);
+        it.scope=new loopScope(curScope);
+        it.scope.isWhile=true;
+        curScope=it.scope;
         curBlock.addIns(new Br("while.cond."+curScope.depth+"."+curScope.order));
 
         curBlock=curFunc.addBlock(new IRBlock("while.cond."+curScope.depth+"."+curScope.order));
@@ -736,18 +741,18 @@ public class IRBuilder implements ASTVisitor {
         int initial=curFunc.cnt++;
         curBlock.addIns(new Alloca("%"+initial,"i32"));
         curBlock.addIns(new Store("i32","0","%"+initial));
-        curBlock.addIns(new Br("for.cond.%"+initial));
+        curBlock.addIns(new Br("for.cond._"+initial));
 
         //for.cond:i<size;
         int tmpi=curFunc.cnt++;
-        curBlock=curFunc.addBlock(new IRBlock("for.cond.%"+initial));
+        curBlock=curFunc.addBlock(new IRBlock("for.cond._"+initial));
         curBlock.addIns(new Load("%"+tmpi,"i32","%"+initial));
         int cmp=curFunc.cnt++;
         curBlock.addIns(new Icmp("%"+cmp,"<","i32","%"+tmpi,size));
-        curBlock.addIns(new Br("%"+cmp,"for.body.%"+initial,"for.end.%"+initial));
+        curBlock.addIns(new Br("%"+cmp,"for.body._"+initial,"for.end._"+initial));
 
         //for.body:ret[i]=NewArray(size)
-        curBlock=curFunc.addBlock(new IRBlock("for.body.%"+initial));
+        curBlock=curFunc.addBlock(new IRBlock("for.body._"+initial));
         int arrayelem=curFunc.cnt++;
         Getelementptr getptr=new Getelementptr();
         getptr.result="%"+arrayelem;
@@ -758,17 +763,17 @@ public class IRBuilder implements ASTVisitor {
         curBlock.addIns(getptr);
         ExprResult ans1=NewArray(sizelist,layer+1);
         curBlock.addIns(new Store("ptr",ans1.temp,"%"+arrayelem));
-        curBlock.addIns(new Br("for.step.%"+initial));
+        curBlock.addIns(new Br("for.step._"+initial));
 
         //for.step:i++
-        curBlock=curFunc.addBlock(new IRBlock("for.step.%"+initial));
+        curBlock=curFunc.addBlock(new IRBlock("for.step._"+initial));
         int next=curFunc.cnt++;
         curBlock.addIns(new Binary("+","i32","%"+tmpi,"1","%"+next));
         curBlock.addIns(new Store("i32","%"+next,"%"+initial));
-        curBlock.addIns(new Br("for.cond.%"+initial));
+        curBlock.addIns(new Br("for.cond._"+initial));
 
         //for.end
-        curBlock=curFunc.addBlock(new IRBlock("for.end.%"+initial));
+        curBlock=curFunc.addBlock(new IRBlock("for.end._"+initial));
         ExprResult res=new ExprResult();
         res.temp="%"+ret;
         res.isConst=false;
