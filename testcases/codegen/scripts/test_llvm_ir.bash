@@ -28,10 +28,7 @@
 # For maintainers: please update the following code when a new version of LLVM
 # is released.
 get_clang() {
-    (which clang-15 > /dev/null 2> /dev/null && echo clang-15) || \
-    (which clang-16 > /dev/null 2> /dev/null && echo clang-16) || \
     (which clang-17 > /dev/null 2> /dev/null && echo clang-17) || \
-    (which clang-18 > /dev/null 2> /dev/null && echo clang-18) || \
     (which clang > /dev/null 2> /dev/null && echo clang) || \
     (echo "clang not found" >&2 && exit 1)
 }

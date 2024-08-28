@@ -1,5 +1,9 @@
 package Backend;
 
+import ASM.ASMBlock;
+import ASM.ASMProgram;
+import ASM.module.ASMFuncDef;
+import ASM.module.ASMGlobalVarDef;
 import IR.IRBlock;
 import IR.IRProgram;
 import IR.IRVisitor;
@@ -7,36 +11,60 @@ import IR.instr.*;
 import IR.module.*;
 
 public class ASMBuilder implements IRVisitor {
-    public ASMBuilder() {
+    public ASMProgram program;
+    public ASMBlock curBlock;
 
+
+    public ASMBuilder(ASMProgram _program) {
+        this.program = _program;
     }
 
+
+    public void
+
     public void visit(IRProgram it){
-        //TODO
+        for(var funcDef:it.funcs){
+            funcDef.accept(this);
+        }
+        for(var varDef:it.globalvars){
+            varDef.accept(this);
+        }
     }
 
     public void visit(IRBlock it){
-        //TODO
+        if(!it.label.equals("entry")){
+
+        }
+        for(var ins:it.statements){
+            ins.accept(this);
+        }
+        it.terminalStmt.accept(this);
     }
 
-    public void visit(IRClassDef it){
-        //TODO
-    }
-
-    public void visit(IRFuncDecl it){
-        //TODO
-    }
+    public void visit(IRClassDef it){}
 
     public void visit(IRFuncDef it){
-        //TODO
+        ASMFuncDef Function=new ASMFuncDef();
+
+        for(int i=0;i<it.paramnames.size();i++){
+            if(i<8){
+
+            }else{
+
+            }
+        }
+        it.entry.accept(this);
+        for(var block:it.body){
+            block.accept(this);
+        }
     }
 
     public void visit(IRGlobalVarDef it){
-        //TODO
+        program.globalvars.add(new ASMGlobalVarDef(it.name,it.value));
     }
 
     public void visit(IRStringDef it){
-        //TODO
+        program.strs.add(new )
     }
 
     public void visit(Alloca it){
@@ -44,6 +72,7 @@ public class ASMBuilder implements IRVisitor {
     }
 
     public void visit(Binary it){
+
         //TODO
     }
 
