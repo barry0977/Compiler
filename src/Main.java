@@ -45,8 +45,8 @@ public class Main {
             writer.write(irprogram.toString());
             writer.close();
             //ASM
-            ASMProgram asmProgram = new ASMProgram();
-            new ASMBuilder(asmProgram).visit(irprogram);
+//            ASMProgram asmProgram = new ASMProgram();
+//            new ASMBuilder(asmProgram).visit(irprogram);
         } catch (Error er) {
             System.err.println(er.toString());
             throw new RuntimeException();

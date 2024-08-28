@@ -11,6 +11,8 @@ import IR.IRVisitor;
 import IR.instr.*;
 import IR.module.*;
 
+import java.util.Stack;
+
 public class ASMBuilder implements IRVisitor {
     public ASMProgram program;
     public ASMBlock curBlock;
@@ -19,6 +21,34 @@ public class ASMBuilder implements IRVisitor {
 
     public ASMBuilder(ASMProgram _program) {
         this.program = _program;
+    }
+
+    //给每个虚拟寄存器分配内存(即有返回值的指令)
+    public void SetStack(Instruction ins){
+        if(ins instanceof Alloca){//Alloca本身需要分配内存
+            curFunc.stacksize+=8;
+            curFunc.alloca_ord.put(((Alloca) ins).result, ++curFunc.allocacnt)
+        }else if(ins instanceof Binary){
+            curFunc.stacksize+=4;
+            curFunc.var_ord.put(((Binary) ins).result,++curFunc.varcnt);
+        }else if(ins instanceof Call){
+            if(!((Call) ins).ResultType.equals("void")){
+                curFunc.stacksize+=4;
+                curFunc.var_ord.put(((Call) ins).result,++curFunc.varcnt);
+            }
+        }else if(ins instanceof Getelementptr){
+            curFunc.stacksize+=4;
+            curFunc.var_ord.put(((Getelementptr) ins).result,++curFunc.varcnt);
+        }else if(ins instanceof Icmp){
+            curFunc.stacksize+=4;
+            curFunc.var_ord.put(((Icmp) ins).result,++curFunc.varcnt);
+        }else if(ins instanceof Load){
+            curFunc.stacksize+=4;
+            curFunc.var_ord.put(((Load) ins).result,++curFunc.varcnt);
+        }else if(ins instanceof Select){
+            curFunc.stacksize+=4;
+            curFunc.var_ord.put(((Select) ins).result,++curFunc.varcnt);
+        }
     }
 
     //lw和sw的立即数只有12位，只能支持-2048~2047
@@ -42,6 +72,16 @@ public class ASMBuilder implements IRVisitor {
             curBlock.addIns(new ASMli(new ASMRegister("t6"),offset));
             curBlock.addIns(new ASMarith("add",new ASMRegister("t6"),new ASMRegister("t6"),addr.reg));
             curBlock.addIns(new ASMsw(rd,new ASMAddr(new ASMRegister("t6"),0)));
+        }
+    }
+
+    //addi的立即数也只有12位
+    public void AddAddi(ASMRegister rd,ASMRegister rs1,int imm){
+        if(imm<=2047&&imm>=-2048){
+            curBlock.addIns(new ASMarithimm("addi",rs1,rd,imm));
+        }else{
+            curBlock.addIns(new ASMli(new ASMRegister("t6"),imm));
+            curBlock.addIns(new ASMarith("add",rs1,new ASMRegister("t6"),rd));
         }
     }
 
@@ -76,7 +116,7 @@ public class ASMBuilder implements IRVisitor {
 
     public void visit(IRBlock it){
         if(!it.label.equals("entry")){
-
+            curBlock=curFunc.addBlock(new ASMBlock(curFunc.name+"."+it.label));
         }
         for(var ins:it.statements){
             ins.accept(this);
@@ -96,14 +136,33 @@ public class ASMBuilder implements IRVisitor {
         program.funcs.add(Function);
         curFunc=Function;
 
-        for(int i=0;i<it.paramnames.size();i++){
+        for(int i=0;i<it.paramnames.size();i++){//传入参数
             Function.args_ord.put(it.paramnames.get(i),i);
         }
 
-        curBlock=curFunc.addBlock(new ASMBlock(curFunc.name+"."+"entry"));
+        //确定栈的大小,为所有变量分配空间
+        //terminalStmt只会跳转，不会产生新的变量，不需要访问
+        for(var ins:it.entry.statements){
+            SetStack(ins);
+        }
+        for(var block:it.body){
+            for(var ins:block.statements){
+                SetStack(ins);
+            }
+        }
+
+        //stacksize必须是16的整数倍
+        if(curFunc.stacksize%16!=0){
+            curFunc.stacksize=(curFunc.stacksize/16+1)*16;
+        }
+
+        var startblock=curFunc.addBlock(new ASMBlock(it.name));
+        var sp=new ASMRegister("sp");
+        var ra=new ASMRegister("ra");
+        AddAddi(sp,sp, -curFunc.stacksize);//addi sp,sp,-stacksize
+        AddStore(ra,new ASMAddr(sp,curFunc.stacksize-4));//sw ra,stacksize-4(sp)
         it.entry.accept(this);
         for(var block:it.body){
-            curBlock=curFunc.addBlock(new ASMBlock(curFunc.name+"."+block.label));
             block.accept(this);
         }
     }
@@ -148,11 +207,15 @@ public class ASMBuilder implements IRVisitor {
 
     public void visit(Br it){
         if(it.haveCondition){
+
             var reg1=new ASMRegister("t0");
             String truelabel=curFunc.name+"."+it.iftrue;
             String falselabel=curFunc.name+"."+it.iffalse;
             loadReg(it.cond,reg1);
-            curBlock.addIns(new ASMbranch(""));
+            curBlock.addIns(new ASMbranch(reg1,truelabel,"bnez"));//如果条件正确，则跳转到truelabel
+            curBlock.addIns(new ASMj(falselabel));//否则直接跳转到falselabel
+            curBlock=curFunc.addBlock(new ASMBlock(truelabel));
+//            curBlock.addIns();
         }else{
             curBlock.addIns(new ASMj(curFunc.name+"."+it.dest));
         }
@@ -206,7 +269,15 @@ public class ASMBuilder implements IRVisitor {
     public void visit(Phi it){}
 
     public void visit(Ret it){
-        //TODO
+        if(!it.type.equals("void")){
+            loadReg(it.value,new ASMRegister("a0"));
+        }
+        var ra=new ASMRegister("ra");//返回地址
+        var sp=new ASMRegister("sp");//栈指针
+
+        AddLoad(ra,new ASMAddr(sp,curFunc.stacksize-4));
+        AddAddi(sp,sp, curFunc.stacksize);
+        curBlock.addIns(new ASMret());
     }
 
     public void visit(Select it){

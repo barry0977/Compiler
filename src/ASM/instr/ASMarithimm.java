@@ -2,7 +2,7 @@ package ASM.instr;
 
 import ASM.util.ASMRegister;
 
-public class ASMarithimm {
+public class ASMarithimm extends ASMins{
     public String op;
     public ASMRegister rs1,rd;
     public int imm;
