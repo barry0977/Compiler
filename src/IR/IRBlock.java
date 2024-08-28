@@ -23,7 +23,7 @@ public class IRBlock extends IRNode {
                     statements.add(ins);
                 }
             }
-            else if(terminalStmt!=null){
+            else{
                 if(!(ins instanceof Br||ins instanceof Ret)){
                     statements.add(ins);
                 }

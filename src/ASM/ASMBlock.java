@@ -13,6 +13,10 @@ public class ASMBlock {
         body = new ArrayList<>();
     }
 
+    public void addIns(ASMins ins){
+        body.add(ins);
+    }
+
     public String toString(){
         StringBuilder sb = new StringBuilder();
         sb.append(label);
