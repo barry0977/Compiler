@@ -539,26 +539,32 @@ public class IRBuilder implements ASTVisitor {
             curBlock=curFunc.addBlock(new IRBlock("logic.rhs."+ord));//还需要执行右操作数
             it.rhs.accept(this);
             ExprResult rhsvalue=new ExprResult(lastExpr);
-            suf=curFunc.cnt++;
-            curBlock.addIns(new Icmp("%"+suf,"!=","i1",rhsvalue.temp,"0"));
+            int suf1=curFunc.cnt++;
+            curBlock.addIns(new Icmp("%"+suf1,"!=","i1",rhsvalue.temp,"0"));
             curBlock.addIns(new Br("logic.end."+ord));
 
             curBlock=curFunc.addBlock(new IRBlock("logic.end."+ord));
-            suf=curFunc.cnt++;
-            Phi phi=new Phi("%"+suf,"i1");
+            int suf2=curFunc.cnt++;
             if(it.opCode.equals("&&")){
-                phi.vals.add("0");
-                phi.labels.add(ori);
-                phi.vals.add("%"+(suf-1));
-                phi.labels.add("logic.rhs."+ord);
+                curBlock.addIns(new Select("%"+suf2,"%"+suf,"i1","%"+suf1,"0"));
             }else{
-                phi.vals.add("1");
-                phi.labels.add(ori);
-                phi.vals.add("%"+(suf-1));
-                phi.labels.add("logic.rhs."+ord);
+                curBlock.addIns(new Select("%"+suf2,"%"+suf,"i1","1","%"+suf1));
             }
-            curBlock.addIns(phi);
-            lastExpr.temp="%"+suf;
+//            int suf2=curFunc.cnt++;
+//            Phi phi=new Phi("%"+suf2,"i1");
+//            if(it.opCode.equals("&&")){
+//                phi.vals.add("0");
+//                phi.labels.add(ori);
+//                phi.vals.add("%"+(suf2-1));
+//                phi.labels.add("logic.rhs."+ord);
+//            }else{
+//                phi.vals.add("1");
+//                phi.labels.add(ori);
+//                phi.vals.add("%"+(suf2-1));
+//                phi.labels.add("logic.rhs."+ord);
+//            }
+//            curBlock.addIns(phi);
+            lastExpr.temp="%"+suf2;
             lastExpr.isConst=false;
             lastExpr.isPtr=false;
             return;
