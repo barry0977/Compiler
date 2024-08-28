@@ -22,31 +22,12 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
         for(var nodes:ctx.children){
             program.defNodes.add((DefNode) visit(nodes));
         }
-//        for(var vardef:ctx.varDef()){
-//            VarDefNode varDef = (VarDefNode) visit(vardef);
-//            program.varNodes.add(varDef);
-//        }
-//        for(var funcdef:ctx.funcDef()){
-//            FuncDefNode funcDef = (FuncDefNode) visit(funcdef);
-//            program.funcNodes.add(funcDef);
-//        }
-//        for(var classdef:ctx.classDef()){
-//            ClassDefNode classDef = (ClassDefNode) visit(classdef);
-//            program.classNodes.add(classDef);
-//        }
         return program;
     }
 
     @Override public ASTNode visitBasictype(MxParser.BasictypeContext ctx) {
         return visitChildren(ctx); 
     }
-
-//    @Override public ASTNode visitTypename(MxParser.TypenameContext ctx) {
-//
-//    @Override public ASTNode visitType(MxParser.TypeContext ctx){
-//    }
-//
-//    @Override public ASTNode visitReturntype(MxParser.ReturntypeContext ctx) {
 
     @Override public ASTNode visitVarDef(MxParser.VarDefContext ctx){
         VarDefNode varDef = new VarDefNode(new Position(ctx));
@@ -68,8 +49,7 @@ public class ASTBuilder extends MxBaseVisitor<ASTNode> {
         if(ctx.returntype().Void()!=null){
             funcDefNode.returntype=new Type("void",0);
         }else{
-            Type type=new Type(ctx.returntype().type());
-            funcDefNode.returntype=type;
+            funcDefNode.returntype=new Type(ctx.returntype().type());
         }
         funcDefNode.name=ctx.Identifier(0).getText();
         for(int i=1;i<ctx.Identifier().size();i++){//获取参数列表

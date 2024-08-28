@@ -462,9 +462,6 @@ public class IRBuilder implements ASTVisitor {
             if(it.type.isFunc){//函数(可能会在类方法里面调用另一个类方法，这里会被识别到)
                 classScope obj=curScope.getClassScope();
                 if(obj!= null){//如果是类方法，需要传递this指针
-//                    lastExpr.isPtr=true;
-//                    lastExpr.PtrName="%this.this";
-//                    lastExpr.PtrType="%class."+obj.classname;
                     lastExpr.temp="%this.this";
                     lastExpr.isConst=false;
                     lastExpr.isPtr=false;
@@ -501,18 +498,12 @@ public class IRBuilder implements ASTVisitor {
             lastExpr.temp="%this.this";
             lastExpr.isConst=false;
             lastExpr.isPtr=false;
-//            lastExpr.PtrName="%this.this";
-//            lastExpr.isPtr=true;
-//            lastExpr.PtrType=it.type.getType();
         }else if(it.isString){//字符串常量需要定义为全局变量
             IRStringDef def=new IRStringDef(gScope.strcnt++,it.value,false);
             program.globalvars.add(def);
             lastExpr.temp="@.str."+def.label;
             lastExpr.isConst=false;
             lastExpr.isPtr=false;
-//            lastExpr.isPtr=true;
-//            lastExpr.PtrName="@.str."+def.label;
-//            lastExpr.PtrType="ptr";
         }else if(it.isNull){
             lastExpr.temp=null;
         }else{//bool,int
