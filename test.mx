@@ -1,39 +1,22 @@
 /*
 Test Package: Codegen
-Author: Pikachu
-Time: 2020-02-03
+Author: 11' Hang Wu
+Time: 2020-01-25
 Input:
 === input ===
-0 0 0 0 0
-0 0 0 0 0
-0 1 0 0 0
-0 0 0 0 0
-0 0 0 0 0
 === end ===
 Output:
 === output ===
-1
+2
+
 === end ===
 ExitCode: 0
 InstLimit: -1
-Origin Package: Codeforces 263A #48540584
+Origin Package: Codegen Pretest-538
 */
-int n;
-int r;
-int c;
-int i;
-int j;
-int abs(int c){
-    if(c>0) return c;
-    return -c;
-}
 
 int main()
 {
-	for (i=0;i<5;i++){
-            n = getInt();
-		if (n==1)
-		{r=i;c=2*i;}}
-    printInt(abs(2-r) + abs(2-c));
-	return 0;
+    int a=2;
+    int b=a;
 }

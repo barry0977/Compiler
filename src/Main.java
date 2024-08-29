@@ -41,16 +41,16 @@ public class Main {
             IRProgram irprogram = new IRProgram();
             new IRBuilder(irprogram,gScope2).visit(ASTRoot);
 //            System.out.println(irprogram.toString());
-//            FileWriter writer=new FileWriter("src/IR/output.ll");
-//            writer.write(irprogram.toString());
-//            writer.close();
+            FileWriter writer=new FileWriter("src/IR/output.ll");
+            writer.write(irprogram.toString());
+            writer.close();
             //ASM
             ASMProgram asmProgram = new ASMProgram();
             new ASMBuilder(asmProgram).visit(irprogram);
             System.out.println(asmProgram.toString());
-//            FileWriter _writer=new FileWriter("test.s");
-//            _writer.write(asmProgram.toString());
-//            _writer.close();
+            FileWriter _writer=new FileWriter("test.s");
+            _writer.write(asmProgram.toString());
+            _writer.close();
         } catch (Error er) {
             System.err.println(er.toString());
             throw new RuntimeException();

@@ -24,9 +24,10 @@ public class ASMBuilder implements IRVisitor {
 
     //给每个虚拟寄存器分配内存(即有返回值的指令)
     public void SetStack(Instruction ins){
-        if(ins instanceof Alloca){//Alloca本身需要分配内存
-            curFunc.stacksize+=4;
+        if(ins instanceof Alloca){//Alloca本身需要分配内存,变量指向分配的Alloca内存
+            curFunc.stacksize+=8;
             curFunc.var_ord.put(((Alloca) ins).result,curFunc.varcnt++);
+            curFunc.alloc_ord.put(((Alloca) ins).result,curFunc.alloccnt++);
         }else if(ins instanceof Binary){
             curFunc.stacksize+=4;
             curFunc.var_ord.put(((Binary) ins).result,curFunc.varcnt++);
@@ -189,8 +190,16 @@ public class ASMBuilder implements IRVisitor {
         program.strs.add(new ASMStringDef(".str."+it.label,it.origin,it.length+1));
     }
 
-    //前面已经用栈分配了空间，不用进行操作
-    public void visit(Alloca it){}
+    //Alloca的变量要指向分配的空间
+    public void visit(Alloca it){
+        curBlock.addIns(new ASMcomment(it.toString()));
+        var reg1=new ASMRegister("t0");
+        var sp=new ASMRegister("sp");
+        int offset=curFunc.getAlloca_offset(it.result);//第几个alloca指令
+        AddAddi(reg1,sp,offset);//reg1中存alloca分配的空间的位置
+        int offset_result=curFunc.getVar_offset(it.result);//在变量中的位置
+        AddStore(reg1,new ASMAddr(sp,offset_result));
+    }
 
     public void visit(Binary it){
         curBlock.addIns(new ASMcomment(it.toString()));
@@ -334,19 +343,22 @@ public class ASMBuilder implements IRVisitor {
     }
 
     public void visit(Load it){
+        //load的result一定是局部变量，且不会是alloca出来的
         curBlock.addIns(new ASMcomment(it.toString()));
         var reg1=new ASMRegister("t0");//用于临时存储
         var reg2=new ASMRegister("t1");
         var sp=new ASMRegister("sp");
         if(it.pointer.charAt(0)=='@'){//全局变量
-            curBlock.addIns(new ASMla(reg1, it.pointer));
-            AddLoad(reg2,new ASMAddr(reg1,0));
+            curBlock.addIns(new ASMla(reg1, it.pointer));//reg1中存pointer指向的地址
+            curBlock.addIns(new ASMlw(reg2,new ASMAddr(reg1,0)));//reg2中存pointer指向的值
+            int offset1=curFunc.getVar_offset(it.result);
+            AddStore(reg1,new ASMAddr(sp,offset1));
         }else{//局部变量
-            int offset=curFunc.getVar_offset(it.pointer);
-            AddLoad(reg2,new ASMAddr(sp,offset));//现在reg2中保存需要的值
+            loadReg(it.pointer,reg1);//reg1中存pointer指向的地址
+            curBlock.addIns(new ASMlw(reg2,new ASMAddr(reg1,0)));//reg2中存pointer指向地址的值
+            int offset1=curFunc.getVar_offset(it.result);
+            AddStore(reg2,new ASMAddr(sp,offset1));
         }
-        int offset1=curFunc.getVar_offset(it.result);
-        AddStore(reg2,new ASMAddr(sp,offset1));
     }
 
     //IR中没用到
@@ -381,16 +393,19 @@ public class ASMBuilder implements IRVisitor {
     }
 
     public void visit(Store it){
+        //store的pointer不会是参数，只会是局部变量和全局变量
         curBlock.addIns(new ASMcomment(it.toString()));
         var reg1=new ASMRegister("t0");//value
         var reg2=new ASMRegister("t1");//ptr
-        loadReg(it.value,reg1);
+        var sp=new ASMRegister("sp");
+        loadReg(it.value,reg1);//reg1里面有要存的值
         if(it.pointer.charAt(0)=='@'){//全局变量
-            curBlock.addIns(new ASMla(reg2,it.pointer));//从全局变量label获取地址
+            curBlock.addIns(new ASMla(reg2,it.pointer));//从全局变量label获取全局变量地址
             curBlock.addIns(new ASMsw(reg1,new ASMAddr(reg2,0)));
         }else{//局部变量
-            int offset=curFunc.getVar_offset(it.pointer);
-            AddStore(reg1,new ASMAddr(new ASMRegister("sp"),offset));
+            int offset=curFunc.getVar_offset(it.pointer);//存的地址
+            AddLoad(reg2,new ASMAddr(sp,offset));//指向的位置
+            AddStore(reg1,new ASMAddr(reg2,0));
         }
     }
 }

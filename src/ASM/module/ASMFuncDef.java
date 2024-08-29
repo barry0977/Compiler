@@ -10,6 +10,9 @@ stack(arg1-arg8 : a0-a7)
 arg1  -----sp-----
 |
 argn
+alloc1
+|
+allocn
 var1
 |
 varn
@@ -17,9 +20,10 @@ ra
  */
 public class ASMFuncDef {
     public String name;
-    public int argscnt,varcnt=0;
+    public int argscnt,varcnt=0,alloccnt=0;
     public int callArgsCnt=0;//call语句所包含的参数个数的最大值
     public ArrayList<ASMBlock> body;
+    public HashMap<String,Integer>alloc_ord;//每次alloca标记一下(从0开始)
     public HashMap<String,Integer>args_ord;//参数在参数列表中的顺序(从0开始)
     public HashMap<String,Integer>var_ord;//所有局部变量的顺序(从0开始)
     public int stacksize=0;
@@ -30,6 +34,7 @@ public class ASMFuncDef {
         body = new ArrayList<>();
         args_ord = new HashMap<>();
         var_ord = new HashMap<>();
+        alloc_ord = new HashMap<>();
     }
 
     public ASMBlock addBlock(ASMBlock block){
@@ -37,9 +42,14 @@ public class ASMFuncDef {
         return block;
     }
 
+    public int getAlloca_offset(String name){
+        int ord=(callArgsCnt+alloc_ord.get(name))*4;
+        return ord;
+    }
+
     public int getVar_offset(String name){
         int ord=var_ord.get(name);
-        return (callArgsCnt+ord)*4;
+        return (callArgsCnt+alloccnt+ord)*4;
     }
 
     public int getArgs_offset(int i){
