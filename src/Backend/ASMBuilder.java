@@ -26,28 +26,28 @@ public class ASMBuilder implements IRVisitor {
     public void SetStack(Instruction ins){
         if(ins instanceof Alloca){//Alloca本身需要分配内存
             curFunc.stacksize+=4;
-            curFunc.var_ord.put(((Alloca) ins).result,++curFunc.varcnt);
+            curFunc.var_ord.put(((Alloca) ins).result,curFunc.varcnt++);
         }else if(ins instanceof Binary){
             curFunc.stacksize+=4;
-            curFunc.var_ord.put(((Binary) ins).result,++curFunc.varcnt);
+            curFunc.var_ord.put(((Binary) ins).result,curFunc.varcnt++);
         }else if(ins instanceof Call){
             if(!((Call) ins).ResultType.equals("void")){
                 curFunc.stacksize+=4;
-                curFunc.var_ord.put(((Call) ins).result,++curFunc.varcnt);
+                curFunc.var_ord.put(((Call) ins).result,curFunc.varcnt++);
             }
             curFunc.callArgsCnt=Math.max(curFunc.callArgsCnt,((Call) ins).ArgsVal.size());//计算函数调用参数个数的最大值，用来分配空间
         }else if(ins instanceof Getelementptr){
             curFunc.stacksize+=4;
-            curFunc.var_ord.put(((Getelementptr) ins).result,++curFunc.varcnt);
+            curFunc.var_ord.put(((Getelementptr) ins).result,curFunc.varcnt++);
         }else if(ins instanceof Icmp){
             curFunc.stacksize+=4;
-            curFunc.var_ord.put(((Icmp) ins).result,++curFunc.varcnt);
+            curFunc.var_ord.put(((Icmp) ins).result,curFunc.varcnt++);
         }else if(ins instanceof Load){
             curFunc.stacksize+=4;
-            curFunc.var_ord.put(((Load) ins).result,++curFunc.varcnt);
+            curFunc.var_ord.put(((Load) ins).result,curFunc.varcnt++);
         }else if(ins instanceof Select){
             curFunc.stacksize+=4;
-            curFunc.var_ord.put(((Select) ins).result,++curFunc.varcnt);
+            curFunc.var_ord.put(((Select) ins).result,curFunc.varcnt++);
         }
     }
 
@@ -109,6 +109,11 @@ public class ASMBuilder implements IRVisitor {
             curBlock.addIns(new ASMli(rd,Integer.parseInt(obj)));
         }
         return new ASMRegister("t0");
+    }
+
+    //把寄存器中的值store到一个虚拟寄存器中1
+    public void storeReg(String obj,ASMRegister rd){
+
     }
 
 
@@ -234,7 +239,7 @@ public class ASMBuilder implements IRVisitor {
     public void visit(Call it){
         var reg1=new ASMRegister("t0");//用于临时存储参数
         var sp=new ASMRegister("sp");
-        //先把会占用的a0-a7存起来
+        //先把会占用的a0-a7存起来(存的位置只负责原函数的a0-a7)
         for(int i=0;i<Math.min(8,it.ArgsVal.size());i++){
             String reg_name="a"+i;
             AddStore(new ASMRegister(reg_name),new ASMAddr(sp,curFunc.getArgs_offset(i)));
@@ -244,7 +249,7 @@ public class ASMBuilder implements IRVisitor {
             if(i<8){//存到a0-7中
                 String reg_name="a"+i;
                 curBlock.addIns(new ASMmv(new ASMRegister(reg_name),reg1));
-            }else{//存到栈中
+            }else{//存到栈中(这里的位置在上面a0-a7的后面，只存要调用函数的参数，而不是原函数)
                 int offset=curFunc.getArgs_offset(i);
                 AddStore(reg1,new ASMAddr(sp,offset));
             }
@@ -322,10 +327,18 @@ public class ASMBuilder implements IRVisitor {
 
     public void visit(Load it){
         var reg1=new ASMRegister("t0");//用于临时存储
+        var reg2=new ASMRegister("t1");
         var sp=new ASMRegister("sp");
-        loadReg(it.pointer,reg1);
+        if(it.pointer.charAt(0)=='@'){//全局变量
+            curBlock.addIns(new ASMla(reg1, it.pointer));
+        }else{//局部变量
+            loadReg(it.pointer,reg1);
+        }
+        //reg1中保存要去取值的地址
+        curBlock.addIns(new ASMlw(reg2,new ASMAddr(reg1,0)));
+        //reg2中保存要取的值
         int offset=curFunc.getVar_offset(it.result);
-        AddStore(reg1,new ASMAddr(sp,offset));
+        AddStore(reg2,new ASMAddr(sp,offset));
     }
 
     //IR中没用到
@@ -360,7 +373,6 @@ public class ASMBuilder implements IRVisitor {
     public void visit(Store it){
         var reg1=new ASMRegister("t0");
         var reg2=new ASMRegister("t1");
-        var sp=new ASMRegister("sp");
         loadReg(it.value,reg1);
         if(it.pointer.charAt(0)=='@'){//全局变量
             curBlock.addIns(new ASMla(reg2,it.pointer));//从全局变量label获取地址

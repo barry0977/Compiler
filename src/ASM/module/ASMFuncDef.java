@@ -20,8 +20,8 @@ public class ASMFuncDef {
     public int argscnt,varcnt=0;
     public int callArgsCnt=0;//call语句所包含的参数个数的最大值
     public ArrayList<ASMBlock> body;
-    public HashMap<String,Integer>args_ord;//参数在参数列表中的顺序
-    public HashMap<String,Integer>var_ord;//所有局部变量的顺序(从1开始)
+    public HashMap<String,Integer>args_ord;//参数在参数列表中的顺序(从0开始)
+    public HashMap<String,Integer>var_ord;//所有局部变量的顺序(从0开始)
     public int stacksize=0;
 
     public ASMFuncDef(String name,int argscnt){
@@ -43,7 +43,7 @@ public class ASMFuncDef {
     }
 
     public int getArgs_offset(int i){
-        return stacksize+4*i;//参数存在调用者的栈上
+        return 4*i;//参数存在调用者的栈上
     }
 
     public String toString(){
