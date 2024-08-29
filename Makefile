@@ -21,3 +21,11 @@ IRa:
 .PHONY: IRall
 IRall:
 	./testcases/codegen/scripts/test_llvm_ir_all.bash 'java -cp /ulib/antlr-4.13.2-complete.jar:bin Main -emit-llvm' testcases/codegen/ src/IR/builtin/builtin.ll
+
+.PHONY: ASMa
+ASMa:
+	./testcases/codegen/scripts/test_asm.bash 'java -cp /ulib/antlr-4.13.2-complete.jar:bin Main -S' testcases/codegen/e1.mx builtin.s
+
+.PHONY: ASMall
+ASMall:
+	./testcases/codegen/scripts/test_all.bash 'java -cp /ulib/antlr-4.13.2-complete.jar:bin Main -S' testcases/codegen/ builtin.s

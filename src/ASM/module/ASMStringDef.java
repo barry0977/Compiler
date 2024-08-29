@@ -11,15 +11,21 @@ public class ASMStringDef {
         this.length = length;
     }
 
+    public void setValue(String value) {
+        for(int i=0;i<value.length();i++) {
+
+        }
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append(name+":\n");
+        sb.append('@'+name+":\n");
         sb.append("\t.ascize \"");
         sb.append(value);
         sb.append("\"\n");
         sb.append("\t.size ");
-        sb.append(name);
+        sb.append('@'+name);
         sb.append(", ");
         sb.append(length);
         sb.append("\n");

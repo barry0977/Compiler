@@ -40,13 +40,17 @@ public class Main {
             //IR
             IRProgram irprogram = new IRProgram();
             new IRBuilder(irprogram,gScope2).visit(ASTRoot);
-            System.out.println(irprogram.toString());
-            FileWriter writer=new FileWriter("src/IR/output.ll");
-            writer.write(irprogram.toString());
-            writer.close();
+//            System.out.println(irprogram.toString());
+//            FileWriter writer=new FileWriter("src/IR/output.ll");
+//            writer.write(irprogram.toString());
+//            writer.close();
             //ASM
-//            ASMProgram asmProgram = new ASMProgram();
-//            new ASMBuilder(asmProgram).visit(irprogram);
+            ASMProgram asmProgram = new ASMProgram();
+            new ASMBuilder(asmProgram).visit(irprogram);
+            System.out.println(asmProgram.toString());
+            FileWriter writer=new FileWriter("test.s");
+            writer.write(asmProgram.toString());
+            writer.close();
         } catch (Error er) {
             System.err.println(er.toString());
             throw new RuntimeException();

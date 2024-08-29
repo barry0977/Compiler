@@ -13,9 +13,9 @@ public class ASMGlobalVarDef {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("\t.globl ");
-        sb.append(name);
+        sb.append('@'+name);
         sb.append("\n");
-        sb.append(name+":\n");
+        sb.append('@'+name+":\n");
         sb.append("\t.zero ");
         sb.append(value);
         sb.append("\n");

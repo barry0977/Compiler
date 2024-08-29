@@ -47,7 +47,7 @@ source $(dirname $0)/utils.bash
 # Note: If you just follow the steps in the README, you need to put the last
 # line (export PATH="/usr/local/opt/bin:$PATH") in your .bashrc or .zshrc
 # (depending on which shell you are using).
-test_bin ravel
+test_bin reimu
 
 # 1. Make temp directory
 if [ $# -eq 4 ]; then
@@ -126,12 +126,12 @@ fi
 EXPECTED_EXIT_CODE=$(grep "ExitCode:" $TESTCASE | awk '{print $2}')
 
 # 4. Execute the code with ravel
-ravel --input-file="$TEMPDIR/test.in" --output-file="$TEMPDIR/test.out" "$TEMPDIR/output.s" $BUILTIN > "$TEMPDIR/ravel_output.txt"
+reimu -i="$TEMPDIR/test.in" -o="$TEMPDIR/test.out" -f="$TEMPDIR/output.s",$BUILTIN -p="$TEMPDIR/ravel_output.txt" --silent
 if [ $? -ne 0 ]; then
     cat << EOF >&2
 Error: Ravel exits with a non-zero value.
 You may run the following command again to see the error message:
-    ravel --input-file='$TEMPDIR/test.in' --output-file='$TEMPDIR/test.out' '$TEMPDIR/output.s' $BUILTIN
+  reimu -i="$TEMPDIR/test.in" -o="$TEMPDIR/test.out" -f="$TEMPDIR/output.s",$BUILTIN -p="$TEMPDIR/ravel_output.txt" --silent
 EOF
     print_temp_dir
     exit 1

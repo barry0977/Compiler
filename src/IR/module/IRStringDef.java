@@ -6,14 +6,17 @@ public class IRStringDef extends IRGlobalVarDef{
     public String label;
     public int length;
     public String value;
+    public String origin;//原始字符串
 
     public IRStringDef(String ori){
         value=ori+"\\00";
+        origin=ori;
         length=ori.length()+1;
     }
 
     public IRStringDef(int _label,String ori,boolean isfstr) {
         this.label = _label+"";
+        this.origin=ori;
         if(isfstr){
             setValueFormat(ori);
         }else{
