@@ -8,13 +8,7 @@ public class ASMStringDef {
     public ASMStringDef(String name, String value,int length) {
         this.name = name;
         this.value = value;
-        this.length = length;
-    }
-
-    public void setValue(String value) {
-        for(int i=0;i<value.length();i++) {
-
-        }
+        this.length = length-1;
     }
 
     @Override

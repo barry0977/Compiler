@@ -19,35 +19,24 @@ declare i1 @string.greaterOrEqual(ptr, ptr)
 declare i32 @array.size(ptr)
 declare ptr @_malloc(i32)
 declare ptr @_malloc_array(i32)
-@make = global ptr null
-@count = global ptr null
-define void @_init_() {
-entry:
-	%0 = call ptr @_malloc_array(i32 1)
-	store ptr %0, ptr @count;
-	ret void;
-}
-
-define void @origin(i32 %N) {
-entry:
-	%N.1.1 = alloca i32;
-	store i32 %N, ptr %N.1.1;
-	%0 = load ptr, ptr @make;
-	%1 = load i32, ptr %N.1.1;
-	%2 = call ptr @_malloc_array(i32 %1)
-	store ptr %2, ptr @make;
-	ret void;
-}
-
-define void @search() {
-entry:
-	ret void;
-}
-
+@.str.0 = private unnamed_addr constant [4 x i8] c"aaa\00"
+@.str.1 = private unnamed_addr constant [6 x i8] c"bbbbb\00"
 define i32 @main() {
 entry:
-	call void @_init_()
-	call void @search()
-	ret i32 0;
+	%s1.1.1 = alloca ptr;
+	store ptr @.str.0, ptr %s1.1.1;
+	%s2.1.1 = alloca ptr;
+	store ptr @.str.1, ptr %s2.1.1;
+	%s3.1.1 = alloca ptr;
+	%0 = load ptr, ptr %s1.1.1;
+	%1 = load ptr, ptr %s2.1.1;
+	%2 = call ptr @string.add(ptr %0, ptr %1)
+	store ptr %2, ptr %s3.1.1;
+	%3 = load ptr, ptr %s3.1.1;
+	%4 = call i32 @string.length(ptr %3)
+	%5 = load ptr, ptr %s3.1.1;
+	%6 = call i32 @string.ord(ptr %5, i32 5)
+	%7 = add i32 %4, %6
+	ret i32 %7;
 }
 

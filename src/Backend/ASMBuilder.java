@@ -105,6 +105,7 @@ public class ASMBuilder implements IRVisitor {
                     curBlock.addIns(new ASMmv(rd,rs));
                 }else{//存在stack中
                     int offset=curFunc.getArgs_offset(id);
+                    offset+=curFunc.stacksize;
                     ASMAddr addr=new ASMAddr(sp,offset);
                     AddLoad(rd,addr);
                 }
@@ -192,6 +193,7 @@ public class ASMBuilder implements IRVisitor {
     public void visit(Alloca it){}
 
     public void visit(Binary it){
+        curBlock.addIns(new ASMcomment(it.toString()));
         var reg1=new ASMRegister("t0");
         var reg2=new ASMRegister("t1");
         var reg3=new ASMRegister("t2");
@@ -221,11 +223,12 @@ public class ASMBuilder implements IRVisitor {
 
     //br的立即数范围较小，最好用jump指令
     public void visit(Br it){
+        curBlock.addIns(new ASMcomment(it.toString()));
         if(it.haveCondition){
             var reg1=new ASMRegister("t0");
             String truelabel=curFunc.name+"."+it.iftrue;
             String falselabel=curFunc.name+"."+it.iffalse;
-            String tmplabel= curFunc.name+"."+program.br_cnt++;
+            String tmplabel= "br."+program.br_cnt++;
             loadReg(it.cond,reg1);
             curBlock.addIns(new ASMbranch(reg1,tmplabel,"beqz"));//如果错，就先跳到tmplabel
             curBlock.addIns(new ASMj(truelabel));//如果对，直接跳到truelabel
@@ -238,6 +241,7 @@ public class ASMBuilder implements IRVisitor {
 
     //调用者保存a0-a7，调用完再还原
     public void visit(Call it){
+        curBlock.addIns(new ASMcomment(it.toString()));
         var reg1=new ASMRegister("t0");//用于临时存储参数
         var sp=new ASMRegister("sp");
         //先把会占用的a0-a7存起来(存的位置只负责原函数的a0-a7)
@@ -255,6 +259,7 @@ public class ASMBuilder implements IRVisitor {
                 AddStore(reg1,new ASMAddr(sp,offset));
             }
         }
+
         curBlock.addIns(new ASMcall(it.FunctionName));
 
         if(!it.ResultType.equals("void")){
@@ -270,6 +275,7 @@ public class ASMBuilder implements IRVisitor {
     }
 
     public void visit(Getelementptr it){
+        curBlock.addIns(new ASMcomment(it.toString()));
         var reg1=new ASMRegister("t0");//存指针
         var reg2=new ASMRegister("t1");//存第几个
         var reg3=new ASMRegister("t2");//存4
@@ -293,6 +299,7 @@ public class ASMBuilder implements IRVisitor {
     }
 
     public void visit(Icmp it){
+        curBlock.addIns(new ASMcomment(it.toString()));
         //用t0，t1保存两个操作数
         var reg1=new ASMRegister("t0");
         var reg2=new ASMRegister("t1");
@@ -327,6 +334,7 @@ public class ASMBuilder implements IRVisitor {
     }
 
     public void visit(Load it){
+        curBlock.addIns(new ASMcomment(it.toString()));
         var reg1=new ASMRegister("t0");//用于临时存储
         var reg2=new ASMRegister("t1");
         var sp=new ASMRegister("sp");
@@ -345,6 +353,7 @@ public class ASMBuilder implements IRVisitor {
     public void visit(Phi it){}
 
     public void visit(Ret it){
+        curBlock.addIns(new ASMcomment(it.toString()));
         if(!it.type.equals("void")){
             loadReg(it.value,new ASMRegister("a0"));
         }
@@ -357,6 +366,7 @@ public class ASMBuilder implements IRVisitor {
     }
 
     public void visit(Select it){
+        curBlock.addIns(new ASMcomment(it.toString()));
         var reg1=new ASMRegister("t0");
         var reg2=new ASMRegister("t1");
         loadReg(it.cond,reg1);//把条件载入t0
@@ -371,8 +381,9 @@ public class ASMBuilder implements IRVisitor {
     }
 
     public void visit(Store it){
-        var reg1=new ASMRegister("t0");
-        var reg2=new ASMRegister("t1");
+        curBlock.addIns(new ASMcomment(it.toString()));
+        var reg1=new ASMRegister("t0");//value
+        var reg2=new ASMRegister("t1");//ptr
         loadReg(it.value,reg1);
         if(it.pointer.charAt(0)=='@'){//全局变量
             curBlock.addIns(new ASMla(reg2,it.pointer));//从全局变量label获取地址

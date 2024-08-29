@@ -43,7 +43,7 @@ public class ASMFuncDef {
     }
 
     public int getArgs_offset(int i){
-        return 4*i;//参数存在调用者的栈上
+        return 4*i;//参数存在调用者的栈上,如果要获取>8的参数，则还要加上当前函数的栈大小
     }
 
     public String toString(){
