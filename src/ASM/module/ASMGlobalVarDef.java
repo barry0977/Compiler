@@ -18,10 +18,10 @@ public class ASMGlobalVarDef {
         sb.append("\t.p2align 2\n");
         sb.append('@'+name+":\n");
         if(value.equals("null")){
-            sb.append("\t.zero ");
-            sb.append("4");
+            sb.append("\t.word ");
+            sb.append("0");
         }else{
-            sb.append("\t.size ");
+            sb.append("\t.word ");
             sb.append(value);
         }
         sb.append("\n");
