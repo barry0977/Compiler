@@ -86,7 +86,11 @@ public class ASMBuilder implements IRVisitor {
     }
 
     //把一个值load到寄存器中
-    public ASMRegister loadReg(String obj,ASMRegister rd){
+    public void loadReg(String obj,ASMRegister rd){
+        if(obj==null){
+            curBlock.addIns(new ASMli(rd,0));
+            return;
+        }
         if(obj.charAt(0)=='@'){//全局变量
             curBlock.addIns(new ASMla(rd,obj));
         }else if(obj.charAt(0)=='%'){//局部变量
@@ -108,14 +112,7 @@ public class ASMBuilder implements IRVisitor {
         }else{//常量
             curBlock.addIns(new ASMli(rd,Integer.parseInt(obj)));
         }
-        return new ASMRegister("t0");
     }
-
-    //把寄存器中的值store到一个虚拟寄存器中1
-    public void storeReg(String obj,ASMRegister rd){
-
-    }
-
 
     public void visit(IRProgram it){
         for(var funcDef:it.funcs){
@@ -222,14 +219,18 @@ public class ASMBuilder implements IRVisitor {
     }
 
 
+    //br的立即数范围较小，最好用jump指令
     public void visit(Br it){
         if(it.haveCondition){
             var reg1=new ASMRegister("t0");
             String truelabel=curFunc.name+"."+it.iftrue;
             String falselabel=curFunc.name+"."+it.iffalse;
+            String tmplabel= curFunc.name+"."+program.br_cnt++;
             loadReg(it.cond,reg1);
-            curBlock.addIns(new ASMbranch(reg1,truelabel,"bnez"));//如果条件正确，则跳转到truelabel
-            curBlock.addIns(new ASMj(falselabel));//否则直接跳转到falselabel
+            curBlock.addIns(new ASMbranch(reg1,tmplabel,"beqz"));//如果错，就先跳到tmplabel
+            curBlock.addIns(new ASMj(truelabel));//如果对，直接跳到truelabel
+            curBlock=curFunc.addBlock(new ASMBlock(tmplabel));
+            curBlock.addIns(new ASMj(falselabel));//tmplabel后直接跳到falselabel
         }else{
             curBlock.addIns(new ASMj(curFunc.name+"."+it.dest));
         }
@@ -331,14 +332,13 @@ public class ASMBuilder implements IRVisitor {
         var sp=new ASMRegister("sp");
         if(it.pointer.charAt(0)=='@'){//全局变量
             curBlock.addIns(new ASMla(reg1, it.pointer));
+            AddLoad(reg2,new ASMAddr(reg1,0));
         }else{//局部变量
-            loadReg(it.pointer,reg1);
+            int offset=curFunc.getVar_offset(it.pointer);
+            AddLoad(reg2,new ASMAddr(sp,offset));//现在reg2中保存需要的值
         }
-        //reg1中保存要去取值的地址
-        curBlock.addIns(new ASMlw(reg2,new ASMAddr(reg1,0)));
-        //reg2中保存要取的值
-        int offset=curFunc.getVar_offset(it.result);
-        AddStore(reg2,new ASMAddr(sp,offset));
+        int offset1=curFunc.getVar_offset(it.result);
+        AddStore(reg2,new ASMAddr(sp,offset1));
     }
 
     //IR中没用到
@@ -378,8 +378,8 @@ public class ASMBuilder implements IRVisitor {
             curBlock.addIns(new ASMla(reg2,it.pointer));//从全局变量label获取地址
             curBlock.addIns(new ASMsw(reg1,new ASMAddr(reg2,0)));
         }else{//局部变量
-            loadReg(it.pointer,reg2);
-            curBlock.addIns(new ASMsw(reg1,new ASMAddr(reg2,0)));
+            int offset=curFunc.getVar_offset(it.pointer);
+            AddStore(reg1,new ASMAddr(new ASMRegister("sp"),offset));
         }
     }
 }

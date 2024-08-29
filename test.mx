@@ -1,4 +1,8 @@
 int main(){
     int[] a=new int[10];
-    a[3]=1;
+    for(int i=0;i<10;i++){
+        a[i]=20-i;
+        printlnInt(a[i]);
+    }
+    return a.size();
 }

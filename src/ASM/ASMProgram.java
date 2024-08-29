@@ -11,6 +11,7 @@ public class ASMProgram {
     public ArrayList<ASMGlobalVarDef> globalvars;
     public ArrayList<ASMStringDef> strs;
     public int select_cnt=0;//用于给select的标签
+    public int br_cnt=0;//用于给br的标签
 
     public ASMProgram() {
         funcs = new ArrayList<>();

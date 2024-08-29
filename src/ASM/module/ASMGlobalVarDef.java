@@ -15,6 +15,7 @@ public class ASMGlobalVarDef {
         sb.append("\t.globl ");
         sb.append('@'+name);
         sb.append("\n");
+        sb.append("\t.p2align 2\n");
         sb.append('@'+name+":\n");
         sb.append("\t.zero ");
         sb.append(value);

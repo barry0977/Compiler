@@ -42,13 +42,13 @@ public class IRBuilder implements ASTVisitor {
         _print.paramtypes.add("ptr");
         program.builtinfuncs.add(_print);
         IRFuncDecl _println=new IRFuncDecl("println","void");
-        _print.paramtypes.add("ptr");
+        _println.paramtypes.add("ptr");
         program.builtinfuncs.add(_println);
         IRFuncDecl _printInt=new IRFuncDecl("printInt","void");
-        _print.paramtypes.add("i32");
+        _printInt.paramtypes.add("i32");
         program.builtinfuncs.add(_printInt);
         IRFuncDecl _printlnInt=new IRFuncDecl("printlnInt","void");
-        _print.paramtypes.add("i32");
+        _printlnInt.paramtypes.add("i32");
         program.builtinfuncs.add(_printlnInt);
         IRFuncDecl _getString=new IRFuncDecl("getString","ptr");
         program.builtinfuncs.add(_getString);
