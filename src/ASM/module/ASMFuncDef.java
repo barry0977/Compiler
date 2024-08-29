@@ -57,6 +57,7 @@ public class ASMFuncDef {
         for(var block:body){
             sb.append(block.toString());
         }
+        sb.append("\n");
         return sb.toString();
     }
 }

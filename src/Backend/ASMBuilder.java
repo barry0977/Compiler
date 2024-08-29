@@ -59,7 +59,7 @@ public class ASMBuilder implements IRVisitor {
             curBlock.addIns(new ASMlw(rd,addr));
         }else{
             curBlock.addIns(new ASMli(new ASMRegister("t6"),offset));
-            curBlock.addIns(new ASMarith("add",new ASMRegister("t6"),new ASMRegister("t6"),addr.reg));
+            curBlock.addIns(new ASMarith("add",addr.reg,new ASMRegister("t6"),new ASMRegister("t6")));
             curBlock.addIns(new ASMlw(rd,new ASMAddr(new ASMRegister("t6"),0)));
         }
     }
@@ -70,7 +70,7 @@ public class ASMBuilder implements IRVisitor {
             curBlock.addIns(new ASMsw(rd,addr));
         }else{
             curBlock.addIns(new ASMli(new ASMRegister("t6"),offset));
-            curBlock.addIns(new ASMarith("add",new ASMRegister("t6"),new ASMRegister("t6"),addr.reg));
+            curBlock.addIns(new ASMarith("add",addr.reg,new ASMRegister("t6"),new ASMRegister("t6")));
             curBlock.addIns(new ASMsw(rd,new ASMAddr(new ASMRegister("t6"),0)));
         }
     }
@@ -285,8 +285,8 @@ public class ASMBuilder implements IRVisitor {
         }
         loadReg(index,reg2);
         curBlock.addIns(new ASMli(reg3,4));
-        curBlock.addIns(new ASMarith("mul",reg2,reg3,reg4));
-        curBlock.addIns(new ASMarith("add",reg1,reg4,reg2));
+        curBlock.addIns(new ASMarith("mul",reg2,reg3,reg4));//reg4 =reg2 * 4
+        curBlock.addIns(new ASMarith("add",reg1,reg4,reg2));//reg2=reg1+reg4
         //现在reg2里面存的是要找的地址
         int offset=curFunc.getVar_offset(it.result);
         AddStore(reg2,new ASMAddr(sp,offset));

@@ -117,6 +117,13 @@ public class IRBuilder implements ASTVisitor {
         for(var def:it.defNodes){
             def.accept(this);
         }
+        if(program.haveinit){//如果有init函数，则要在最后加上ret void
+            if(Init.body.isEmpty()){
+                Init.entry.addIns(new Ret("void",null));
+            }else{
+                Init.body.get(Init.body.size()-1).addIns(new Ret("void",null));
+            }
+        }
     }
 
     public void visit(ClassDefNode it){
