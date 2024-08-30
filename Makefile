@@ -24,8 +24,8 @@ IRall:
 
 .PHONY: ASMa
 ASMa:
-	./testcases/codegen/scripts/test_asm.bash 'java -cp /ulib/antlr-4.13.2-complete.jar:bin Main -S' $(file) builtin.s
+	./testcases/codegen/scripts/test_asm.bash 'java -cp /ulib/antlr-4.13.2-complete.jar:bin Main -S' $(file) src/IR/builtin/builtin.s
 
 .PHONY: ASMall
 ASMall:
-	./testcases/codegen/scripts/test_asm_all.bash 'java -cp /ulib/antlr-4.13.2-complete.jar:bin Main -S' testcases/codegen/ builtin.s
+	./testcases/codegen/scripts/test_asm_all.bash 'java -cp /ulib/antlr-4.13.2-complete.jar:bin Main -S' testcases/codegen/ src/IR/builtin/builtin.s
