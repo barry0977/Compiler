@@ -4,7 +4,8 @@ build:
 
 .PHONY: run
 run:
-	cd bin && java -cp /ulib/antlr-4.13.2-complete.jar:. Main
+	cd bin && java -cp /ulib/antlr-4.13.2-complete.jar:. Main && cat ../src/IR/builtin/builtin.s
+
 
 .PHONY: Sema
 Sema:
