@@ -352,7 +352,7 @@ public class ASMBuilder implements IRVisitor {
             curBlock.addIns(new ASMla(reg1, it.pointer));//reg1中存pointer指向的地址
             curBlock.addIns(new ASMlw(reg2,new ASMAddr(reg1,0)));//reg2中存pointer指向的值
             int offset1=curFunc.getVar_offset(it.result);
-            AddStore(reg1,new ASMAddr(sp,offset1));
+            AddStore(reg2,new ASMAddr(sp,offset1));
         }else{//局部变量
             loadReg(it.pointer,reg1);//reg1中存pointer指向的地址
             curBlock.addIns(new ASMlw(reg2,new ASMAddr(reg1,0)));//reg2中存pointer指向地址的值

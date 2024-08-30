@@ -4,7 +4,7 @@ int main()
     int[] b = new int[4];
     b[2]=2;
     a=b;
-    println(toString(b[2]));
-    println(toString(a[2]));
+    printlnInt(b[2]);
+    printlnInt(a[2]);
     return 0;
 }
