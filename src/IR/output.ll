@@ -19,21 +19,13 @@ declare i1 @string.greaterOrEqual(ptr, ptr)
 declare i32 @array.size(ptr)
 declare ptr @_malloc(i32)
 declare ptr @_malloc_array(i32)
-define void @test() {
-entry:
-	%a.1.1 = alloca i32;
-	%0 = call i32 @getInt()
-	store i32 %0, ptr %a.1.1;
-	%1 = load i32, ptr %a.1.1;
-	%2 = sdiv i32 %1, 2
-	call void @printlnInt(i32 %2)
-	ret void;
-}
-
+@a = global i32 1
+@.str.0 = private unnamed_addr constant [4 x i8] c"abc\00"
 define i32 @main() {
 entry:
-	call void @test()
-	call void @test()
+	%0 = load i32, ptr @a;
+	call void @printlnInt(i32 %0)
+	call void @println(ptr @.str.0)
 	ret i32 0;
 }
 

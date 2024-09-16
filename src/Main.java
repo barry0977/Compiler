@@ -40,7 +40,6 @@ public class Main {
             //IR
             IRProgram irprogram = new IRProgram();
             new IRBuilder(irprogram,gScope2).visit(ASTRoot);
-//            System.out.println(irprogram.toString());
 //            FileWriter writer=new FileWriter("src/IR/output.ll");
 //            writer.write(irprogram.toString());
 //            writer.close();
