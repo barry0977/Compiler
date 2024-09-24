@@ -3,15 +3,18 @@ package IR;
 import IR.instr.*;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class IRBlock extends IRNode {
     public String label;
     public ArrayList<Instruction> statements;
     public Instruction terminalStmt=null;
+    public HashMap<String,String>def2use;//块内def和use的映射,保存最近一次指针被def的值
 
     public IRBlock(String label) {
         this.label = label;
         statements = new ArrayList<>();
+        def2use = new HashMap<>();
     }
 
     public void addIns(Instruction ins) {

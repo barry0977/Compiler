@@ -143,6 +143,7 @@ public class IRBuilder implements ASTVisitor {
         curScope=curScope.parent;
     }
 
+    //函数的参数原本都先alloca了一块空间用于储存，用到的时候再load出来，现在也记在def2use里面，和局部变量一样处理（如果是类方法还要加上this）
     public void visit(FuncDefNode it){
         curScope=it.scope2;
         IRFuncDef funcDef=new IRFuncDef();
@@ -157,6 +158,7 @@ public class IRBuilder implements ASTVisitor {
             Store ins2=new Store("ptr","%this","%this.addr");
             funcDef.entry.addIns(ins2);
             funcDef.entry.addIns(new Load("%this.this","ptr","%this.addr"));//用于在成员函数中代替this
+            funcDef.entry.def2use.put("%this.addr","%this");
         }
         if(funcDef.name.equals("main")){//main函数要先调用_init_
             if(program.haveinit){
@@ -175,6 +177,8 @@ public class IRBuilder implements ASTVisitor {
             ins2.value="%"+args.second;
             ins2.pointer="%"+args.second+"."+curScope.depth+"."+curScope.order;
             funcDef.entry.addIns(ins2);
+            //
+            funcDef.entry.def2use.put(ins1.result,ins2.value);
         }
         funcDef.returntype=new IRType(it.returntype);
         program.funcs.add(funcDef);
@@ -199,7 +203,7 @@ public class IRBuilder implements ASTVisitor {
                 if(variable.second==null){//没有初始值
                     IRGlobalVarDef gvar=new IRGlobalVarDef(variable.first,new IRType(it.vartype),"null");
                     program.globalvars.add(gvar);
-                }else{
+                }else{//有初始值
                     if(variable.second instanceof BasicExprNode && (((BasicExprNode) variable.second).isInt||((BasicExprNode) variable.second).isFalse||((BasicExprNode) variable.second).isTrue||((BasicExprNode) variable.second).isNull)){
                         IRGlobalVarDef gvar=new IRGlobalVarDef(variable.first,new IRType(it.vartype),((BasicExprNode) variable.second).value);
                         program.globalvars.add(gvar);
@@ -232,6 +236,7 @@ public class IRBuilder implements ASTVisitor {
                 if(variable.second!=null){
                     variable.second.accept(this);
                     curBlock.addIns(new Store(ins.type,lastExpr.temp,ins.result));//防止出现这里面已经开了新块，导致用到的匿名变量在后面定义
+                    curBlock.def2use.put(ins.result,lastExpr.temp);
                 }
             }
         }
@@ -451,6 +456,10 @@ public class IRBuilder implements ASTVisitor {
         var obj=lastExpr.PtrName;//赋值表达式左边，应该用指针
         it.rhs.accept(this);
         var value=lastExpr.temp;
+        //当lhs是alloca出来的,是最近一次def，加在def2use中
+        if(it.lhs instanceof BasicExprNode) {//局部变量
+            curBlock.def2use.put(obj,value);
+        }
 
         if(it.lhs.type.dim==0&&it.lhs.type.isString){
             curBlock.addIns(new Store("ptr",value,obj));
@@ -492,6 +501,19 @@ public class IRBuilder implements ASTVisitor {
                     lastExpr.PtrName="@"+it.name;
                 }else{//局部变量
                     lastExpr.PtrName="%"+it.name+"."+target.depth+"."+target.order;
+                    if(curBlock.def2use.containsKey(lastExpr.PtrName)){//如果之前存了上一次def,则直接返回最近的def，不需要load
+                        lastExpr.isPtr=true;
+                        lastExpr.PtrType=it.type.getType();//指针指向的类型
+                        lastExpr.temp=curBlock.def2use.get(lastExpr.PtrName);
+                        if(lastExpr.temp!=null){
+                            if(lastExpr.temp.charAt(0)=='%'){
+                                lastExpr.isConst=false;
+                            }else{
+                                lastExpr.isConst=true;
+                            }
+                        }
+                        return;
+                    }
                 }
                 lastExpr.isPtr=true;
                 lastExpr.PtrType=it.type.getType();//指针指向的类型
@@ -571,7 +593,6 @@ public class IRBuilder implements ASTVisitor {
         it.rhs.accept(this);
         ExprResult rhsvalue=new ExprResult(lastExpr);
         int name=curFunc.cnt++;
-        //System.err.println("Binary4 curFunc.cnt="+curFunc.cnt);
         if(it.lhs.type.dim==0&&it.lhs.type.isString){//如果是字符串
             Call ins=new Call("%"+name,"i1","string.add");
             if(it.opCode.equals("+")){
@@ -852,6 +873,8 @@ public class IRBuilder implements ASTVisitor {
         lastExpr.temp="%"+name;
         lastExpr.isConst=false;
         lastExpr.PtrName= lastExpr.PtrName;
+        //这也会更新def
+        curBlock.def2use.put(lastExpr.PtrName,lastExpr.temp);
     }
 
     public void visit(SufExprNode it){//不是左值
@@ -866,6 +889,8 @@ public class IRBuilder implements ASTVisitor {
         lastExpr.isPtr=false;
         lastExpr.isConst=false;
         lastExpr.temp=lastExpr.temp;
+        //这也会更新def
+        curBlock.def2use.put(lastExpr.PtrName,"%"+name);
     }
 
     public void visit(ParenExprNode it){
