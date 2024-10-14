@@ -8,13 +8,24 @@ import java.util.HashMap;
 public class IRBlock extends IRNode {
     public String label;
     public ArrayList<Instruction> statements;
-    public Instruction terminalStmt=null;
+    public Instruction terminalStmt=null;//块内最后的语句，一定是ret或者br
+
     public HashMap<String,String>def2use;//块内def和use的映射,保存最近一次指针被def的值
+
+    //CFG中的前驱和后继
+    public ArrayList<IRBlock>pred=null,succ=null;
+
+    //支配树
+    public IRBlock idom;//直接支配节点
+    public ArrayList<IRBlock> domFrontier;//支配边界
+
 
     public IRBlock(String label) {
         this.label = label;
         statements = new ArrayList<>();
         def2use = new HashMap<>();
+        pred = new ArrayList<>();
+        succ = new ArrayList<>();
     }
 
     public void addIns(Instruction ins) {
