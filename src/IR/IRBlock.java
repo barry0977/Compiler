@@ -16,7 +16,8 @@ public class IRBlock extends IRNode {
     public ArrayList<IRBlock>pred=null,succ=null;
 
     //支配树
-    public IRBlock idom;//直接支配节点
+    public IRBlock idom = null;//直接支配节点
+    public ArrayList<IRBlock>domChildren;//支配树上的子节点
     public ArrayList<IRBlock> domFrontier;//支配边界
 
 
@@ -26,6 +27,8 @@ public class IRBlock extends IRNode {
         def2use = new HashMap<>();
         pred = new ArrayList<>();
         succ = new ArrayList<>();
+        domChildren = new ArrayList<>();
+        domFrontier = new ArrayList<>();
     }
 
     public void addIns(Instruction ins) {
