@@ -20,6 +20,8 @@ public class IRBlock extends IRNode {
     public ArrayList<IRBlock>domChildren;//支配树上的子节点
     public ArrayList<IRBlock> domFrontier;//支配边界
 
+    //phi放置
+    public HashMap<String,Phi>philist;
 
     public IRBlock(String label) {
         this.label = label;
@@ -29,6 +31,7 @@ public class IRBlock extends IRNode {
         succ = new ArrayList<>();
         domChildren = new ArrayList<>();
         domFrontier = new ArrayList<>();
+        philist = new HashMap<>();
     }
 
     public void addIns(Instruction ins) {
@@ -60,6 +63,9 @@ public class IRBlock extends IRNode {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append(label).append(":\n");
+        for(var phi:philist.values()){
+            sb.append(phi).append("\n");
+        }
         for (Instruction i : statements) {
             sb.append(i.toString());
         }

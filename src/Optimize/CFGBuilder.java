@@ -13,8 +13,8 @@ public class CFGBuilder {
         this.program = program;
     }
 
-    public void visitProgram(IRProgram it){
-        for(var func:it.funcs){
+    public void work(){
+        for(var func:program.funcs){
             visitFunc(func);
         }
     }
