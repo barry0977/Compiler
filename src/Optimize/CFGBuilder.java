@@ -5,6 +5,8 @@ import IR.IRProgram;
 import IR.instr.*;
 import IR.module.IRFuncDef;
 
+import java.util.ArrayList;
+
 public class CFGBuilder {
     public IRProgram program;
     public IRFuncDef curFunc;
@@ -30,6 +32,7 @@ public class CFGBuilder {
                     }else if(block.label.equals(falsedest)){
                         it.succ.add(block);
                         block.pred.add(it);
+                        break;
                     }
                 }
             }else{//无条件跳转
@@ -37,7 +40,7 @@ public class CFGBuilder {
                 for(var block:curFunc.body){
                     if(block.label.equals(dest)){//要跳转的块
                         block.pred.add(it);
-                        it.succ.add(it);
+                        it.succ.add(block);
                         break;
                     }
                 }
@@ -61,10 +64,13 @@ public class CFGBuilder {
                 }
             }
         }
+        //先把这些节点加到一个列表中再删除，否则边遍历边删除会出现ConcurrentModificationException
+        ArrayList<IRBlock>deletelist = new ArrayList<>();
         for(var block:curFunc.body){
             if(block.pred.isEmpty()){
-                it.body.remove(block);
+                deletelist.add(block);
             }
         }
+        it.body.removeAll(deletelist);
     }
 }

@@ -17,6 +17,12 @@ public class Mem2Reg {
     }
 
     public void visitFunc(IRFuncDef func){
+        for(var instr:func.entry.statements){
+
+        }
+    }
+
+    public void placePhi(){
 
     }
 }

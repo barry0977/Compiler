@@ -80,7 +80,7 @@ public class DomTreeBuilder {
             var dom = Dom.get(ind);//该节点的支配集
             int domindex = dom.nextSetBit(0);//获取被设置为1的位
             while(domindex != -1){
-                if(Dom.get(domindex).cardinality() == dom.cardinality() - 1){
+                if(Dom.get(domindex).cardinality() == (dom.cardinality() - 1)){
                     if(domindex == 0){
                         block.idom = func.entry;
                     }else{

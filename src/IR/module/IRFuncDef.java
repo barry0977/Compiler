@@ -13,7 +13,8 @@ public class IRFuncDef extends IRNode {
     public ArrayList<IRType> paramtypes;//参数类型
     public ArrayList<String> paramnames;//参数名
     public IRBlock entry;
-    public int cnt=0;//用于一个函数中的匿名函数的命名
+    public int cnt=0;//用于一个函数中的匿名变量的命名
+    public int Icnt=0;//用于newarray中手写循环的变量i的命名
     public int shortname=0;//用于块编号
     public ArrayList<IRBlock> body;
 
