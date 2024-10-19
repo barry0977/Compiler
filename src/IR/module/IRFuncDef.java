@@ -3,7 +3,9 @@ package IR.module;
 import IR.IRBlock;
 import IR.IRNode;
 import IR.IRVisitor;
+import IR.instr.Alloca;
 import IR.type.IRType;
+import Util.Pair;
 
 import java.util.ArrayList;
 
@@ -37,6 +39,20 @@ public class IRFuncDef extends IRNode {
     public IRBlock addBlock(IRBlock block){
         body.add(block);
         return block;
+    }
+
+    //函数内所有Alloca出来的变量(name+type)
+    public ArrayList<Pair<String,String>>getAlloca(){
+        ArrayList<Pair<String,String>> res=new ArrayList<>();
+        for(var instr:entry.statements){
+            if(instr instanceof Alloca){
+                res.add(new Pair<>(((Alloca) instr).result,((Alloca) instr).type));
+            }
+        }
+        if(entry.terminalStmt instanceof Alloca){
+            res.add(new Pair<>(((Alloca) entry.terminalStmt).result,((Alloca) entry.terminalStmt).type));
+        }
+        return res;
     }
 
     @Override

@@ -64,7 +64,7 @@ public class IRBlock extends IRNode {
         StringBuilder sb = new StringBuilder();
         sb.append(label).append(":\n");
         for(var phi:philist.values()){
-            sb.append(phi).append("\n");
+            sb.append(phi.toString()).append("\n");
         }
         for (Instruction i : statements) {
             sb.append(i.toString());

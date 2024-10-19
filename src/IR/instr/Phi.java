@@ -30,7 +30,7 @@ public class Phi extends Instruction {
         sb.append(" = phi ");
         sb.append(ty);
         sb.append(" ");
-        for (int i = 0; i < vals.size(); i++) {
+        for (int i = 0; i < labels.size(); i++) {
             if(i>0){
                 sb.append(", ");
             }
