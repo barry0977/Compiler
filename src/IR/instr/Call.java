@@ -3,6 +3,7 @@ package IR.instr;
 import IR.IRVisitor;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class Call extends Instruction {
     public String result;
@@ -22,6 +23,15 @@ public class Call extends Instruction {
         this.FunctionName = FunctionName;
         ArgsTy = new ArrayList<>();
         ArgsVal = new ArrayList<>();
+    }
+
+    @Override
+    public void rename(HashMap<String, String> map){
+        for(int i=0;i<ArgsTy.size();i++){
+            if(map.containsKey(ArgsVal.get(i))){
+                ArgsVal.set(i,map.get(ArgsVal.get(i)));
+            }
+        }
     }
 
     @Override

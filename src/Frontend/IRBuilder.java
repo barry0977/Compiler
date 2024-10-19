@@ -435,7 +435,7 @@ public class IRBuilder implements ASTVisitor {
 
         int ans=curFunc.cnt++;
         Getelementptr getptr=new Getelementptr();
-        getptr.result="%"+ans;
+        getptr.result="%_"+ans;
         getptr.pointer=array;
         getptr.type="ptr";
         getptr.types.add("i32");
@@ -443,10 +443,10 @@ public class IRBuilder implements ASTVisitor {
         curBlock.addIns(getptr);
         int tmp=curFunc.cnt++;
         //ArrayExpr是左值，需要load成右值
-        curBlock.addIns(new Load("%"+tmp,new IRType(it.type).toString(),"%"+ans));
-        lastExpr.temp="%"+tmp;
+        curBlock.addIns(new Load("%_"+tmp,new IRType(it.type).toString(),"%_"+ans));
+        lastExpr.temp="%_"+tmp;
         lastExpr.isConst=false;
-        lastExpr.PtrName="%"+ans;
+        lastExpr.PtrName="%_"+ans;
         lastExpr.PtrType=new IRType(it.type).toString();
         lastExpr.isPtr=true;
     }
@@ -487,7 +487,7 @@ public class IRBuilder implements ASTVisitor {
                 if(target instanceof classScope){//类的成员变量
                     Getelementptr ins=new Getelementptr();
                     int index=curFunc.cnt++;
-                    ins.result="%"+index;//用匿名变量来记载成员变量的指针
+                    ins.result="%_"+index;//用匿名变量来记载成员变量的指针
                     ins.pointer="%this.this";//代替this指针
                     ins.types.add("i32");
                     ins.idx.add("0");
@@ -520,7 +520,7 @@ public class IRBuilder implements ASTVisitor {
                 lastExpr.isConst=false;
                 //Identifier是左值，需要load成右值返回
                 int numname=curFunc.cnt++;
-                lastExpr.temp="%"+numname;
+                lastExpr.temp="%_"+numname;
                 curBlock.addIns(new Load(lastExpr.temp,new IRType(it.type).toString(),lastExpr.PtrName));
             }
         }else if(it.isThis){
@@ -548,11 +548,11 @@ public class IRBuilder implements ASTVisitor {
         if(it.opCode.equals("&&")||it.opCode.equals("||")){
             int ord=curFunc.shortname++;//每次需要短路求值就增加，防止block名字重复
             int suf=curFunc.cnt++;//同一个函数中匿名变量不能重复
-            curBlock.addIns(new Icmp("%"+suf,"!=","i1",lhsvalue.temp,"0"));//若为true，则说明左边为true
+            curBlock.addIns(new Icmp("%_"+suf,"!=","i1",lhsvalue.temp,"0"));//若为true，则说明左边为true
             if(it.opCode.equals("&&")){//若左边是false，则不用看右边
-                curBlock.addIns(new Br("%"+suf,"logic.rhs."+ord,"logic.end."+ord));
+                curBlock.addIns(new Br("%_"+suf,"logic.rhs."+ord,"logic.end."+ord));
             }else{//若左边是true，则不用看右边
-                curBlock.addIns(new Br("%"+suf,"logic.end."+ord,"logic.rhs."+ord));
+                curBlock.addIns(new Br("%_"+suf,"logic.end."+ord,"logic.rhs."+ord));
             }
             String ori=curBlock.label;//最开始块的label
 
@@ -560,17 +560,17 @@ public class IRBuilder implements ASTVisitor {
             it.rhs.accept(this);
             ExprResult rhsvalue=new ExprResult(lastExpr);
             int suf1=curFunc.cnt++;
-            curBlock.addIns(new Icmp("%"+suf1,"!=","i1",rhsvalue.temp,"0"));
+            curBlock.addIns(new Icmp("%_"+suf1,"!=","i1",rhsvalue.temp,"0"));
             curBlock.addIns(new Br("logic.end."+ord));
 
             curBlock=curFunc.addBlock(new IRBlock("logic.end."+ord));
             int suf2=curFunc.cnt++;
             if(it.opCode.equals("&&")){
-                curBlock.addIns(new Select("%"+suf2,"%"+suf,"i1","%"+suf1,"0"));
+                curBlock.addIns(new Select("%_"+suf2,"%_"+suf,"i1","%_"+suf1,"0"));
             }else{
-                curBlock.addIns(new Select("%"+suf2,"%"+suf,"i1","1","%"+suf1));
+                curBlock.addIns(new Select("%_"+suf2,"%_"+suf,"i1","1","%_"+suf1));
             }
-            lastExpr.temp="%"+suf2;
+            lastExpr.temp="%_"+suf2;
             lastExpr.isConst=false;
             lastExpr.isPtr=false;
             return;
@@ -580,7 +580,7 @@ public class IRBuilder implements ASTVisitor {
         ExprResult rhsvalue=new ExprResult(lastExpr);
         int name=curFunc.cnt++;
         if(it.lhs.type.dim==0&&it.lhs.type.isString){//如果是字符串
-            Call ins=new Call("%"+name,"i1","string.add");
+            Call ins=new Call("%_"+name,"i1","string.add");
             if(it.opCode.equals("+")){
                 ins.FunctionName="string.add";
                 ins.ResultType="ptr";//字符串相加
@@ -602,22 +602,22 @@ public class IRBuilder implements ASTVisitor {
             ins.ArgsTy.add("ptr");
             ins.ArgsVal.add(rhsvalue.temp);
             curBlock.addIns(ins);
-            lastExpr.temp="%"+name;
+            lastExpr.temp="%_"+name;
             lastExpr.isConst=false;
             lastExpr.isPtr=false;
             return;
         }
         if(it.opCode.equals("==")||it.opCode.equals("!=")||it.opCode.equals(">")||it.opCode.equals(">=")||it.opCode.equals("<")||it.opCode.equals("<=")){
             String type=new IRType(it.lhs.type).toString();
-            Icmp obj=new Icmp("%"+name,it.opCode,type,lhsvalue.temp,rhsvalue.temp);
+            Icmp obj=new Icmp("%_"+name,it.opCode,type,lhsvalue.temp,rhsvalue.temp);
             curBlock.addIns(obj);
         }else{
             String type=new IRType(it.lhs.type).toString();
-            Binary obj=new Binary(it.opCode,type, lhsvalue.temp,rhsvalue.temp,"%"+name);
+            Binary obj=new Binary(it.opCode,type, lhsvalue.temp,rhsvalue.temp,"%_"+name);
             curBlock.addIns(obj);
         }
         lastExpr.isConst=false;
-        lastExpr.temp="%"+name;
+        lastExpr.temp="%_"+name;
         lastExpr.isPtr=false;
     }
 
@@ -643,8 +643,8 @@ public class IRBuilder implements ASTVisitor {
         }else{
             int name=curFunc.cnt++;
             String type=new IRType(it.then_.type).toString();
-            curBlock.addIns(new Select("%"+name,condvalue,type,truevalue,falsevalue));
-            lastExpr.temp="%"+name;
+            curBlock.addIns(new Select("%_"+name,condvalue,type,truevalue,falsevalue));
+            lastExpr.temp="%_"+name;
         }
         lastExpr.isConst=false;
         lastExpr.isPtr=false;
@@ -682,8 +682,8 @@ public class IRBuilder implements ASTVisitor {
         }
         if(!ins.ResultType.equals("void")){//如果没有返回值，那么不要分配匿名变量储存结果
             int name=curFunc.cnt++;
-            ins.result="%"+name;
-            lastExpr.temp="%"+name;
+            ins.result="%_"+name;
+            lastExpr.temp="%_"+name;
         }else{
             lastExpr.temp=null;
         }
@@ -711,7 +711,7 @@ public class IRBuilder implements ASTVisitor {
             if (var != null) {
                 int ptrname=curFunc.cnt++;
                 Getelementptr ins=new Getelementptr();
-                ins.result="%"+ptrname;//获取的指针名
+                ins.result="%_"+ptrname;//获取的指针名
                 ins.pointer=lastExpr.temp;//this指针是右值，应该用寄存器
                 ins.type="%class."+it.obj.type.typeName;
                 int varid=class_.getIndex(it.member);//是类中的第几个变量
@@ -725,7 +725,7 @@ public class IRBuilder implements ASTVisitor {
                 lastExpr.PtrType= var.getType();
                 //成员变量是左值，需要load转换为右值
                 int tmp=curFunc.cnt++;
-                lastExpr.temp="%"+tmp;
+                lastExpr.temp="%_"+tmp;
                 lastExpr.isConst=false;
                 curBlock.addIns(new Load(lastExpr.temp,new IRType(var).toString(),lastExpr.PtrName));
             }
@@ -738,11 +738,11 @@ public class IRBuilder implements ASTVisitor {
             var size=sizelist.get(layer);
             int ret=curFunc.cnt++;
             //给数组分配空间
-            Call ins=new Call("%"+ret,"ptr","_malloc_array");
+            Call ins=new Call("%_"+ret,"ptr","_malloc_array");
             ins.ArgsTy.add("i32");
             ins.ArgsVal.add(size);
             curBlock.addIns(ins);
-            ans.temp="%"+ret;
+            ans.temp="%_"+ret;
             ans.isConst=false;
             ans.isPtr=false;
             return ans;
@@ -750,7 +750,7 @@ public class IRBuilder implements ASTVisitor {
 
         var size=sizelist.get(layer);
         int ret=curFunc.cnt++;
-        Call ins=new Call("%"+ret,"ptr","_malloc_array");
+        Call ins=new Call("%_"+ret,"ptr","_malloc_array");
         ins.ArgsTy.add("i32");
         ins.ArgsVal.add(size);
         curBlock.addIns(ins);
@@ -764,36 +764,36 @@ public class IRBuilder implements ASTVisitor {
         //for.cond:i<size;
         int tmpi=curFunc.cnt++;
         curBlock=curFunc.addBlock(new IRBlock("for.cond._"+initial));
-        curBlock.addIns(new Load("%"+tmpi,"i32","%i."+initial));
+        curBlock.addIns(new Load("%_"+tmpi,"i32","%i."+initial));
         int cmp=curFunc.cnt++;
-        curBlock.addIns(new Icmp("%"+cmp,"<","i32","%"+tmpi,size));
-        curBlock.addIns(new Br("%"+cmp,"for.body._"+initial,"for.end._"+initial));
+        curBlock.addIns(new Icmp("%_"+cmp,"<","i32","%_"+tmpi,size));
+        curBlock.addIns(new Br("%_"+cmp,"for.body._"+initial,"for.end._"+initial));
 
         //for.body:ret[i]=NewArray(size)
         curBlock=curFunc.addBlock(new IRBlock("for.body._"+initial));
         int arrayelem=curFunc.cnt++;
         Getelementptr getptr=new Getelementptr();
-        getptr.result="%"+arrayelem;
+        getptr.result="%_"+arrayelem;
         getptr.type="ptr";
-        getptr.pointer="%"+ret;
+        getptr.pointer="%_"+ret;
         getptr.types.add("i32");
-        getptr.idx.add("%"+tmpi);//取数组的一个元素，不需要i32 0
+        getptr.idx.add("%_"+tmpi);//取数组的一个元素，不需要i32 0
         curBlock.addIns(getptr);
         ExprResult ans1=NewArray(sizelist,layer+1);
-        curBlock.addIns(new Store("ptr",ans1.temp,"%"+arrayelem));
+        curBlock.addIns(new Store("ptr",ans1.temp,"%_"+arrayelem));
         curBlock.addIns(new Br("for.step._"+initial));
 
         //for.step:i++
         curBlock=curFunc.addBlock(new IRBlock("for.step._"+initial));
         int next=curFunc.cnt++;
-        curBlock.addIns(new Binary("+","i32","%"+tmpi,"1","%"+next));
-        curBlock.addIns(new Store("i32","%"+next,"%i."+initial));
+        curBlock.addIns(new Binary("+","i32","%_"+tmpi,"1","%_"+next));
+        curBlock.addIns(new Store("i32","%_"+next,"%i."+initial));
         curBlock.addIns(new Br("for.cond._"+initial));
 
         //for.end
         curBlock=curFunc.addBlock(new IRBlock("for.end._"+initial));
         ExprResult res=new ExprResult();
-        res.temp="%"+ret;
+        res.temp="%_"+ret;
         res.isConst=false;
         res.isPtr=false;
         return res;
@@ -815,7 +815,7 @@ public class IRBuilder implements ASTVisitor {
 
     public void visit(NewVarExprNode it){
         int tmp=curFunc.cnt++;
-        Call ins=new Call("%"+tmp,"ptr","_malloc");
+        Call ins=new Call("%_"+tmp,"ptr","_malloc");
         ins.ArgsTy.add("i32");
         String args=gScope.getClassSize(it.type.typeName)+"";
         ins.ArgsVal.add(args);
@@ -823,10 +823,10 @@ public class IRBuilder implements ASTVisitor {
         if(gScope.classDecls.get(it.type.typeName).haveConstructor){//如果有构造函数，则要调用
             Call constructor=new Call(null,"void",it.type.typeName+ "."+it.type.typeName);
             constructor.ArgsTy.add("ptr");
-            constructor.ArgsVal.add("%"+tmp);
+            constructor.ArgsVal.add("%_"+tmp);
             curBlock.addIns(constructor);
         }
-        lastExpr.temp="%"+tmp;
+        lastExpr.temp="%_"+tmp;
         lastExpr.isConst=false;
         lastExpr.isPtr=false;
     }
@@ -835,14 +835,14 @@ public class IRBuilder implements ASTVisitor {
         it.expr.accept(this);
         int name=curFunc.cnt++;
         if(it.opCode.equals("!")){
-            curBlock.addIns(new Binary("^","i1",lastExpr.temp,"1","%"+name));
+            curBlock.addIns(new Binary("^","i1",lastExpr.temp,"1","%_"+name));
         }else if(it.opCode.equals("~")){
-            curBlock.addIns(new Binary("^","i32",lastExpr.temp,"-1","%"+name));
+            curBlock.addIns(new Binary("^","i32",lastExpr.temp,"-1","%_"+name));
         }else if(it.opCode.equals("-")){
-            curBlock.addIns(new Binary("-","i32","0",lastExpr.temp,"%"+name));
+            curBlock.addIns(new Binary("-","i32","0",lastExpr.temp,"%_"+name));
         }
         lastExpr.isPtr=false;
-        lastExpr.temp="%"+name;
+        lastExpr.temp="%_"+name;
         lastExpr.isConst=false;
     }
 
@@ -850,13 +850,13 @@ public class IRBuilder implements ASTVisitor {
         it.expr.accept(this);
         int name=curFunc.cnt++;
         if(it.opCode.equals("++")){
-            curBlock.addIns(new Binary("+","i32",lastExpr.temp,"1","%"+name));
+            curBlock.addIns(new Binary("+","i32",lastExpr.temp,"1","%_"+name));
         }else{
-            curBlock.addIns(new Binary("-","i32",lastExpr.temp,"1","%"+name));
+            curBlock.addIns(new Binary("-","i32",lastExpr.temp,"1","%_"+name));
         }
-        curBlock.addIns(new Store("i32","%"+name,lastExpr.PtrName));
+        curBlock.addIns(new Store("i32","%_"+name,lastExpr.PtrName));
         lastExpr.isPtr=true;
-        lastExpr.temp="%"+name;
+        lastExpr.temp="%_"+name;
         lastExpr.isConst=false;
         lastExpr.PtrName= lastExpr.PtrName;
         //这也会更新def
@@ -867,16 +867,16 @@ public class IRBuilder implements ASTVisitor {
         it.expr.accept(this);
         int name=curFunc.cnt++;
         if(it.opCode.equals("++")){
-            curBlock.addIns(new Binary("+","i32",lastExpr.temp,"1","%"+name));
+            curBlock.addIns(new Binary("+","i32",lastExpr.temp,"1","%_"+name));
         }else{
-            curBlock.addIns(new Binary("-","i32",lastExpr.temp,"1","%"+name));
+            curBlock.addIns(new Binary("-","i32",lastExpr.temp,"1","%_"+name));
         }
-        curBlock.addIns(new Store("i32","%"+name,lastExpr.PtrName));
+        curBlock.addIns(new Store("i32","%_"+name,lastExpr.PtrName));
         lastExpr.isPtr=false;
         lastExpr.isConst=false;
         lastExpr.temp=lastExpr.temp;
         //这也会更新def
-        curBlock.def2use.put(lastExpr.PtrName,"%"+name);
+        curBlock.def2use.put(lastExpr.PtrName,"%_"+name);
     }
 
     public void visit(ParenExprNode it){
@@ -896,18 +896,18 @@ public class IRBuilder implements ASTVisitor {
             if(expr.type.isString){
             }else if(expr.type.isInt){
                 int tmp=curFunc.cnt++;
-                Call ins=new Call("%"+tmp,"ptr","toString");
+                Call ins=new Call("%_"+tmp,"ptr","toString");
                 ins.ArgsTy.add("i32");
                 ins.ArgsVal.add(lastExpr.temp);
                 curBlock.addIns(ins);
-                lastExpr.temp="%"+tmp;
+                lastExpr.temp="%_"+tmp;
                 lastExpr.isConst=false;
                 lastExpr.isPtr=false;
             }else{
                 int tmp=curFunc.cnt++;
-                Select ins=new Select("%"+tmp,lastExpr.temp,"ptr","@.str.true","@.str.false");
+                Select ins=new Select("%_"+tmp,lastExpr.temp,"ptr","@.str.true","@.str.false");
                 curBlock.addIns(ins);
-                lastExpr.temp="%"+tmp;
+                lastExpr.temp="%_"+tmp;
                 lastExpr.isConst=false;
                 lastExpr.isPtr=false;
             }
@@ -918,26 +918,26 @@ public class IRBuilder implements ASTVisitor {
         lastExpr.isPtr=false;
         for(int i=0;i<exprlist.size();i++){
             int tmp=curFunc.cnt++;
-            Call ins=new Call("%"+tmp,"ptr","string.add");
+            Call ins=new Call("%_"+tmp,"ptr","string.add");
             ins.ArgsTy.add("ptr");
             ins.ArgsVal.add(exprlist.get(i));
             ins.ArgsTy.add("ptr");
             ins.ArgsVal.add(strlist.get(i+1));
             curBlock.addIns(ins);
             int ans=curFunc.cnt++;
-            Call ins2=new Call("%"+ans,"ptr","string.add");
+            Call ins2=new Call("%_"+ans,"ptr","string.add");
             ins2.ArgsTy.add("ptr");
             ins2.ArgsVal.add(lastExpr.temp);
             ins2.ArgsTy.add("ptr");
-            ins2.ArgsVal.add("%"+tmp);
+            ins2.ArgsVal.add("%_"+tmp);
             curBlock.addIns(ins2);
-            lastExpr.temp="%"+ans;
+            lastExpr.temp="%_"+ans;
         }
     }
 
     public void visit(ArrayConstNode it) {
         int addr=curFunc.cnt++;
-        Call ins=new Call("%"+addr,"ptr","_malloc_array");
+        Call ins=new Call("%_"+addr,"ptr","_malloc_array");
         ins.ArgsTy.add("i32");
         ins.ArgsVal.add(it.elements.size()+"");
         curBlock.addIns(ins);
@@ -945,16 +945,16 @@ public class IRBuilder implements ASTVisitor {
             it.elements.get(i).accept(this);
             int tmp=curFunc.cnt++;
             Getelementptr getptr=new Getelementptr();
-            getptr.result="%"+tmp;
-            getptr.pointer="%"+addr;
+            getptr.result="%_"+tmp;
+            getptr.pointer="%_"+addr;
             getptr.type="ptr";
             getptr.types.add("i32");
             getptr.idx.add(i+"");
             curBlock.addIns(getptr);
             String type=new IRType(it.elements.get(i).type).toString();//元素类型
-            curBlock.addIns(new Store(type,lastExpr.temp,"%"+tmp));
+            curBlock.addIns(new Store(type,lastExpr.temp,"%_"+tmp));
         }
-        lastExpr.temp="%"+addr;
+        lastExpr.temp="%_"+addr;
         lastExpr.isConst=false;
         lastExpr.isPtr=false;
     }

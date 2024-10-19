@@ -2,6 +2,8 @@ package IR.instr;
 
 import IR.IRVisitor;
 
+import java.util.HashMap;
+
 public class Br extends Instruction {
     public String cond,iftrue,iffalse;
     public String dest;
@@ -19,6 +21,15 @@ public class Br extends Instruction {
     public Br(String dest){
         this.dest = dest;
         this.haveCondition=false;
+    }
+
+    @Override
+    public void rename(HashMap<String, String> map){
+        if(haveCondition){
+            if(map.containsKey(cond)){
+                cond = map.get(cond);
+            }
+        }
     }
 
     @Override

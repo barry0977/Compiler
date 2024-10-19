@@ -2,6 +2,8 @@ package IR.instr;
 
 import IR.IRVisitor;
 
+import java.util.HashMap;
+
 public class Binary extends Instruction {
     public String op;
     public String lhs,rhs;
@@ -50,6 +52,16 @@ public class Binary extends Instruction {
             case "^":
                 op = "xor";
                 break;
+        }
+    }
+
+    @Override
+    public void rename(HashMap<String,String> map) {
+        if(map.containsKey(lhs)){
+            lhs = map.get(lhs);
+        }
+        if(map.containsKey(rhs)){
+            rhs = map.get(rhs);
         }
     }
 

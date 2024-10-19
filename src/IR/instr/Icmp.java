@@ -2,6 +2,8 @@ package IR.instr;
 
 import IR.IRVisitor;
 
+import java.util.HashMap;
+
 public class Icmp extends Instruction{
     public String result;
     public String cond;
@@ -41,6 +43,19 @@ public class Icmp extends Instruction{
                 break;
         }
         return res;
+    }
+
+    @Override
+    public void rename(HashMap<String, String> map){
+        if(map.containsKey(cond)){
+            cond = map.get(cond);
+        }
+        if(map.containsKey(op1)) {
+            op1 = map.get(op1);
+        }
+        if(map.containsKey(op2)) {
+            op2 = map.get(op2);
+        }
     }
 
     @Override

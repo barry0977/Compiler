@@ -5,25 +5,34 @@ import IR.IRProgram;
 import IR.instr.*;
 import IR.module.IRFuncDef;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Stack;
 
 public class Mem2Reg {
     public IRProgram program;
     public IRFuncDef curFunc;
-    public HashMap<String,String>allocavar;//所有Alloca变量名和类型
+    public HashSet<String>AllocaVar;//Alloca出来的局部变量
     public HashMap<String,HashMap<IRBlock,String>>deflist;//每个局部变量在每个块中的最后一次def
-    public HashMap<String,String>valueStack;
+    public HashMap<String, Stack<String>>valuestack;//每个变量名的栈顶就是当前的变量值
+    public HashMap<String,String>replaceMap;//记录每个变量应该被重命名为什么值
 
     public Mem2Reg(IRProgram program) {
         this.program = program;
-        allocavar = new HashMap<>();
+        init();
+    }
+
+    public void init(){
+        AllocaVar = new HashSet<>();
         deflist = new HashMap<>();
-        valueStack = new HashMap<>();
+        valuestack = new HashMap<>();
+        replaceMap = new HashMap<>();
     }
 
     public void work(){
         for(var func:program.funcs){
+            init();
             visitFunc(func);
         }
     }
@@ -32,15 +41,16 @@ public class Mem2Reg {
         curFunc = func;
         var allocaList = func.getAlloca();
         for(var alloca:allocaList){
-            allocavar.put(alloca.first,alloca.second);
+            AllocaVar.add(alloca.first);
             deflist.put(alloca.first,new HashMap<>());
+            valuestack.put(alloca.first,new Stack<>());
         }
         //放置phi
         for(var alloca:allocaList){
             placePhi(alloca.first,alloca.second);
         }
         //变量重命名
-
+        replace();
     }
 
     //对于一个Alloca的局部变量，在所有def块的支配边界头部放置phi，再对预留了phi的块的支配边界头部放置phi，重复操作。
@@ -82,13 +92,84 @@ public class Mem2Reg {
                 if(!domF.philist.containsKey(name)){//如果该块中没有预留对应变量的phi指令
                     //Phi指令结果命名:变量名+块label
                     Phi ins = new Phi(name+'.'+domF.label,type);
+                    int i=0;
                     for(var pred:domF.pred){//加入所有CFG上前驱
                         ins.labels.add(pred.label);
+                        ins.label_order.put(pred.label,i++);
                     }
                     domF.philist.put(name,ins);
                     WorkList.add(domF);
                 }
             }
+        }
+    }
+
+    public void rename(IRBlock block,IRBlock preBlock){
+        //创建一个副本，用于在函数末恢复
+        HashMap<String,Stack<String>>copy = new HashMap<>();
+        for(String key:valuestack.keySet()){
+            Stack<String> newStack = (Stack<String>) valuestack.get(key).clone();
+            copy.put(key,newStack);
+        }
+        //所有phi语句也算def,也要更新last_def
+        for(var phi:block.philist.keySet()){
+            var value = valuestack.get(phi).peek();
+            var phiIns = block.philist.get(phi);
+            int order = phiIns.label_order.get(preBlock.label);
+            if(value == null){
+                if(phiIns.ty.equals("ptr")){
+                    phiIns.vals.set(order,"null");
+                }else{
+                    phiIns.vals.set(order,"0");
+                }
+            }else{
+                phiIns.vals.set(order,value);
+            }
+            valuestack.get(phi).push(phiIns.result);
+        }
+
+        ArrayList<Instruction>deletelist = new ArrayList<>();
+        for(var instr:block.statements){
+            if(instr instanceof Load){
+                String name = ((Load) instr).pointer;
+                if(AllocaVar.contains(name)){
+                    String cur_value = valuestack.get(name).pop();
+                    deletelist.add(instr);
+                    replaceMap.put(((Load) instr).result,cur_value);
+                }
+            }else if(instr instanceof Store){
+                String name = ((Store) instr).pointer;
+                if(AllocaVar.contains(name)){
+                    deletelist.add(instr);
+                    valuestack.get(name).push(((Store) instr).value);
+                }
+            }else if(instr instanceof Alloca){
+                deletelist.add(instr);
+            }
+        }
+        block.statements.removeAll(deletelist);
+        //用当前值更新CFG上所有后继中的phi
+//        for(var succ:block.succ){
+//            for(var element:succ.philist.keySet()){
+//                if()
+//            }
+//        }
+        for(var succ:block.succ){
+            rename(succ,block);
+            valuestack = copy;
+        }
+    }
+
+    public void replace(){
+        for(var instr:curFunc.entry.statements){
+            instr.rename(replaceMap);
+        }
+        curFunc.entry.terminalStmt.rename(replaceMap);
+        for(var block:curFunc.body){
+            for(var instr:block.statements){
+                instr.rename(replaceMap);
+            }
+            block.terminalStmt.rename(replaceMap);
         }
     }
 }

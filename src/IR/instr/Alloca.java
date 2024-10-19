@@ -2,6 +2,8 @@ package IR.instr;
 
 import IR.IRVisitor;
 
+import java.util.HashMap;
+
 public class Alloca extends Instruction{
     public String result,type;
 
@@ -10,6 +12,10 @@ public class Alloca extends Instruction{
     public Alloca(String result, String type){
         this.result = result;
         this.type = type;
+    }
+
+    @Override
+    public void rename(HashMap<String, String> map){
     }
 
     @Override

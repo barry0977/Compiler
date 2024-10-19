@@ -2,6 +2,8 @@ package IR.instr;
 
 import IR.IRVisitor;
 
+import java.util.HashMap;
+
 public class Load extends Instruction{
     public String result,type,pointer;
 
@@ -11,6 +13,13 @@ public class Load extends Instruction{
         this.result = result;
         this.type = type;
         this.pointer = pointer;
+    }
+
+    @Override
+    public void rename(HashMap<String, String> map){
+        if(map.containsKey(pointer)){
+            result = map.get(pointer);
+        }
     }
 
     @Override

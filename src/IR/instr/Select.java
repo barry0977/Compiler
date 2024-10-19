@@ -2,6 +2,8 @@ package IR.instr;
 
 import IR.IRVisitor;
 
+import java.util.HashMap;
+
 public class Select extends Instruction {
     public String result;
     public String cond;
@@ -16,6 +18,19 @@ public class Select extends Instruction {
         this.ty = ty;
         this.val1 = val1;
         this.val2 = val2;
+    }
+
+    @Override
+    public void rename(HashMap<String, String> map){
+        if(map.containsKey(cond)){
+            cond = map.get(cond);
+        }
+        if (map.containsKey(val1)){
+            val1 = map.get(val1);
+        }
+        if (map.containsKey(val2)){
+            val2 = map.get(val2);
+        }
     }
 
     @Override

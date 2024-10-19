@@ -3,16 +3,19 @@ package IR.instr;
 import IR.IRVisitor;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class Phi extends Instruction {
     public String result;
     public String ty;
     public ArrayList<String>vals;
     public ArrayList<String>labels;
+    public HashMap<String,Integer>label_order;
 
     public Phi() {
         vals = new ArrayList<>();
         labels = new ArrayList<>();
+        label_order = new HashMap<>();
     }
 
     public Phi(String result,String ty) {
@@ -20,6 +23,11 @@ public class Phi extends Instruction {
         this.ty = ty;
         vals = new ArrayList<>();
         labels = new ArrayList<>();
+        label_order = new HashMap<>();
+    }
+
+    @Override
+    public void rename(HashMap<String, String> map){
     }
 
     @Override
