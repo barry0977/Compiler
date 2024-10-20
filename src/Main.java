@@ -6,6 +6,9 @@ import Frontend.IRBuilder;
 import Frontend.SemanticChecker;
 import Frontend.SymbolCollector;
 import IR.IRProgram;
+import Optimize.CFGBuilder;
+import Optimize.DomTreeBuilder;
+import Optimize.Mem2Reg;
 import Parser.MxLexer;
 import Parser.MxParser;
 import Util.MxErrorListener;
@@ -40,13 +43,20 @@ public class Main {
             //IR
             IRProgram irprogram = new IRProgram();
             new IRBuilder(irprogram,gScope2).visit(ASTRoot);
-//            FileWriter writer=new FileWriter("src/IR/output.ll");
-//            writer.write(irprogram.toString());
-//            writer.close();
+
+            //optimize
+            new CFGBuilder(irprogram).work();
+            new DomTreeBuilder(irprogram).work();
+            new Mem2Reg(irprogram).work();
+
+            System.out.println(irprogram.toString());
+            FileWriter writer=new FileWriter("src/IR/output.ll");
+            writer.write(irprogram.toString());
+            writer.close();
             //ASM
-            ASMProgram asmProgram = new ASMProgram();
-            new ASMBuilder(asmProgram).visit(irprogram);
-            System.out.println(asmProgram.toString());
+//            ASMProgram asmProgram = new ASMProgram();
+//            new ASMBuilder(asmProgram).visit(irprogram);
+//            System.out.println(asmProgram.toString());
 //            FileWriter _writer=new FileWriter("test.s");
 //            _writer.write(asmProgram.toString());
 //            _writer.close();

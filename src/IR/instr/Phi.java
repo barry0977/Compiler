@@ -28,6 +28,11 @@ public class Phi extends Instruction {
 
     @Override
     public void rename(HashMap<String, String> map){
+        for(int i=0;i<vals.size();i++){
+            if(map.containsKey(vals.get(i))){
+                vals.set(i,map.get(vals.get(i)));
+            }
+        }
     }
 
     @Override

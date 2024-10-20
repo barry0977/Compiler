@@ -49,6 +49,7 @@ public class Mem2Reg {
         for(var alloca:allocaList){
             placePhi(alloca.first,alloca.second);
         }
+        rename(func.entry);
         //变量重命名
         replace();
     }
@@ -96,6 +97,7 @@ public class Mem2Reg {
                     for(var pred:domF.pred){//加入所有CFG上前驱
                         ins.labels.add(pred.label);
                         ins.label_order.put(pred.label,i++);
+                        ins.vals.add(name+'.'+domF.label);
                     }
                     domF.philist.put(name,ins);
                     WorkList.add(domF);
@@ -104,7 +106,7 @@ public class Mem2Reg {
         }
     }
 
-    public void rename(IRBlock block,IRBlock preBlock){
+    public void rename(IRBlock block){
         //创建一个副本，用于在函数末恢复
         HashMap<String,Stack<String>>copy = new HashMap<>();
         for(String key:valuestack.keySet()){
@@ -113,18 +115,7 @@ public class Mem2Reg {
         }
         //所有phi语句也算def,也要更新last_def
         for(var phi:block.philist.keySet()){
-            var value = valuestack.get(phi).peek();
             var phiIns = block.philist.get(phi);
-            int order = phiIns.label_order.get(preBlock.label);
-            if(value == null){
-                if(phiIns.ty.equals("ptr")){
-                    phiIns.vals.set(order,"null");
-                }else{
-                    phiIns.vals.set(order,"0");
-                }
-            }else{
-                phiIns.vals.set(order,value);
-            }
             valuestack.get(phi).push(phiIns.result);
         }
 
@@ -133,9 +124,15 @@ public class Mem2Reg {
             if(instr instanceof Load){
                 String name = ((Load) instr).pointer;
                 if(AllocaVar.contains(name)){
-                    String cur_value = valuestack.get(name).pop();
+                    if(!valuestack.get(name).empty()){//如果栈中没有值，那么不可能会使用这个结果
+                        String cur_value = valuestack.get(name).peek();
+                        if(replaceMap.containsKey(cur_value)){//可能原来的值已经被替换，要检查，获取最新的值
+                            replaceMap.put(((Load) instr).result,replaceMap.get(cur_value));
+                        }else{
+                            replaceMap.put(((Load) instr).result,cur_value);
+                        }
+                    }
                     deletelist.add(instr);
-                    replaceMap.put(((Load) instr).result,cur_value);
                 }
             }else if(instr instanceof Store){
                 String name = ((Store) instr).pointer;
@@ -148,24 +145,44 @@ public class Mem2Reg {
             }
         }
         block.statements.removeAll(deletelist);
+
         //用当前值更新CFG上所有后继中的phi
-//        for(var succ:block.succ){
-//            for(var element:succ.philist.keySet()){
-//                if()
-//            }
-//        }
         for(var succ:block.succ){
-            rename(succ,block);
-            valuestack = copy;
+            for(var element:succ.philist.keySet()){
+                var phiIns = succ.philist.get(element);//该变量对应的phi指令
+                int order = phiIns.label_order.get(block.label);
+                if(!valuestack.get(element).empty()){
+                    var value = valuestack.get(element).peek();
+                    phiIns.vals.set(order,value);
+                }else{
+                    if(phiIns.ty.equals("ptr")){
+                        phiIns.vals.set(order,"null");
+                    }else{
+                        phiIns.vals.set(order,"0");
+                    }
+                }
+            }
         }
+        //对当前块在支配树中的子节点进行递归处理，即在支配树上DFS
+        for(var dom_child:block.domChildren){
+            rename(dom_child);
+        }
+        valuestack = copy;
     }
 
+    //将每条语句中变量名替换，注意新放置的phi也需要替换
     public void replace(){
+        for(var phiname:curFunc.entry.philist.keySet()){
+            curFunc.entry.philist.get(phiname).rename(replaceMap);
+        }
         for(var instr:curFunc.entry.statements){
             instr.rename(replaceMap);
         }
         curFunc.entry.terminalStmt.rename(replaceMap);
         for(var block:curFunc.body){
+            for(var phiname:block.philist.keySet()){
+                block.philist.get(phiname).rename(replaceMap);
+            }
             for(var instr:block.statements){
                 instr.rename(replaceMap);
             }
