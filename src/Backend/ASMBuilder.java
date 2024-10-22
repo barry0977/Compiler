@@ -102,11 +102,14 @@ public class ASMBuilder implements IRVisitor {
                 AddLoad(rd,new ASMAddr(sp,offset));
             }else{//参数
                 if(id<8){//存在寄存器中
-                    ASMRegister rs=new ASMRegister("a"+id);
-                    curBlock.addIns(new ASMmv(rd,rs));
+                    if(curFunc.istocall){//已经被存到栈上
+                        AddLoad(rd,new ASMAddr(sp,4*(id+Math.max(curFunc.callArgsCnt-8,0))));
+                    }else{
+                        ASMRegister rs=new ASMRegister("a"+id);
+                        curBlock.addIns(new ASMmv(rd,rs));
+                    }
                 }else{//存在stack中
-                    int offset=curFunc.getArgs_offset(id);
-                    offset+=curFunc.stacksize;
+                    int offset=curFunc.getArgs_offset(id)+curFunc.stacksize;
                     ASMAddr addr=new ASMAddr(sp,offset);
                     AddLoad(rd,addr);
                 }
@@ -163,7 +166,9 @@ public class ASMBuilder implements IRVisitor {
             }
         }
 
-        curFunc.stacksize+=4*curFunc.callArgsCnt;
+        curFunc.stacksize+=4*Math.min(8,it.paramnames.size());//每次调用函数要把a0-a7中占用的存在栈上
+        curFunc.stacksize+=4*Math.max(0,curFunc.callArgsCnt-8);//调用函数时，被调用函数多余的参数
+        curFunc.stacksize_forcall = Math.min(8,it.paramnames.size())+Math.max(0,curFunc.callArgsCnt-8);
         curFunc.stacksize+=4;//再为ra创建空间
         //stacksize必须是16的整数倍
         if(curFunc.stacksize%16!=0){
@@ -193,7 +198,7 @@ public class ASMBuilder implements IRVisitor {
     //Alloca的变量要指向分配的空间
     public void visit(Alloca it){
         curBlock.addIns(new ASMcomment(it.toString()));
-        var reg1=new ASMRegister("t0");
+        var reg1=new ASMRegister("t5");
         var sp=new ASMRegister("sp");
         int offset=curFunc.getAlloca_offset(it.result);//第几个alloca指令
         AddAddi(reg1,sp,offset);//reg1中存alloca分配的空间的位置
@@ -203,9 +208,8 @@ public class ASMBuilder implements IRVisitor {
 
     public void visit(Binary it){
         curBlock.addIns(new ASMcomment(it.toString()));
-        var reg1=new ASMRegister("t0");
-        var reg2=new ASMRegister("t1");
-        var reg3=new ASMRegister("t2");
+        var reg1=new ASMRegister("t5");
+        var reg2=new ASMRegister("t6");
 
         loadReg(it.lhs,reg1);
         loadReg(it.rhs,reg2);
@@ -224,9 +228,9 @@ public class ASMBuilder implements IRVisitor {
             case "xor":op="xor";break;
         }
 
-        curBlock.addIns(new ASMarith(op,reg1,reg2,reg3));
+        curBlock.addIns(new ASMarith(op,reg1,reg2,reg1));
         int offset=curFunc.getVar_offset(it.result);
-        AddStore(reg3,new ASMAddr(new ASMRegister("sp"),offset));
+        AddStore(reg1,new ASMAddr(new ASMRegister("sp"),offset));
     }
 
 
@@ -234,7 +238,7 @@ public class ASMBuilder implements IRVisitor {
     public void visit(Br it){
         curBlock.addIns(new ASMcomment(it.toString()));
         if(it.haveCondition){
-            var reg1=new ASMRegister("t0");
+            var reg1=new ASMRegister("t5");
             String truelabel=curFunc.name+"."+it.iftrue;
             String falselabel=curFunc.name+"."+it.iffalse;
             String tmplabel= "br."+program.br_cnt++;
@@ -251,21 +255,22 @@ public class ASMBuilder implements IRVisitor {
     //调用者保存a0-a7，调用完再还原
     public void visit(Call it){
         curBlock.addIns(new ASMcomment(it.toString()));
-        var reg1=new ASMRegister("t0");//用于临时存储参数
+        var reg1=new ASMRegister("t5");//用于临时存储参数
         var sp=new ASMRegister("sp");
         //先把会占用的a0-a7存起来(存的位置只负责原函数的a0-a7)
-        for(int i=0;i<Math.min(8,it.ArgsVal.size());i++){
+        curFunc.istocall = true;
+        for(int i=0;i<Math.min(8,curFunc.argscnt);i++){
             String reg_name="a"+i;
-            AddStore(new ASMRegister(reg_name),new ASMAddr(sp,curFunc.getArgs_offset(i)));
+            curBlock.addIns(new ASMsw(new ASMRegister(reg_name),new ASMAddr(sp,4*(i+Math.max(curFunc.callArgsCnt-8,0)))));
         }
         for(int i=0;i<it.ArgsVal.size();i++){
-            loadReg(it.ArgsVal.get(i),reg1);//把每个参数先存到t0中
+            loadReg(it.ArgsVal.get(i),reg1);//把每个参数先存到t5中
             if(i<8){//存到a0-7中
                 String reg_name="a"+i;
                 curBlock.addIns(new ASMmv(new ASMRegister(reg_name),reg1));
-            }else{//存到栈中(这里的位置在上面a0-a7的后面，只存要调用函数的参数，而不是原函数)
+            }else{//存到栈中(只存要调用函数的参数，而不是原函数)
                 int offset=curFunc.getArgs_offset(i);
-                AddStore(reg1,new ASMAddr(sp,offset));
+                curBlock.addIns(new ASMsw(reg1,new ASMAddr(sp,offset)));
             }
         }
 
@@ -277,18 +282,17 @@ public class ASMBuilder implements IRVisitor {
             AddStore(new ASMRegister("a0"),addr);
         }
         //再把a0-7还原
-        for(int i=0;i<Math.min(8,it.ArgsVal.size());i++){
+        for(int i=0;i<Math.min(8,curFunc.argscnt);i++){
             String reg_name="a"+i;
-            AddLoad(new ASMRegister(reg_name),new ASMAddr(sp,curFunc.getArgs_offset(i)));
+            AddLoad(new ASMRegister(reg_name),new ASMAddr(sp,4*(i+Math.max(curFunc.callArgsCnt-8,0))));
         }
+        curFunc.istocall=false;
     }
 
     public void visit(Getelementptr it){
         curBlock.addIns(new ASMcomment(it.toString()));
-        var reg1=new ASMRegister("t0");//存指针
-        var reg2=new ASMRegister("t1");//存第几个
-        var reg3=new ASMRegister("t2");//存4
-        var reg4=new ASMRegister("t3");//存偏移量
+        var reg1=new ASMRegister("t4");//存指针
+        var reg2=new ASMRegister("t5");//存第几个
         var sp=new ASMRegister("sp");
 
         String index;
@@ -299,9 +303,8 @@ public class ASMBuilder implements IRVisitor {
             index=it.idx.get(1);
         }
         loadReg(index,reg2);
-        curBlock.addIns(new ASMli(reg3,4));
-        curBlock.addIns(new ASMarith("mul",reg2,reg3,reg4));//reg4 =reg2 * 4
-        curBlock.addIns(new ASMarith("add",reg1,reg4,reg2));//reg2=reg1+reg4
+        curBlock.addIns(new ASMarithimm("slli",reg2,reg2,2));//reg2 =reg2 << 2
+        curBlock.addIns(new ASMarith("add",reg1,reg2,reg2));//reg2=reg1+reg2
         //现在reg2里面存的是要找的地址
         int offset=curFunc.getVar_offset(it.result);
         AddStore(reg2,new ASMAddr(sp,offset));
@@ -309,55 +312,53 @@ public class ASMBuilder implements IRVisitor {
 
     public void visit(Icmp it){
         curBlock.addIns(new ASMcomment(it.toString()));
-        //用t0，t1保存两个操作数
-        var reg1=new ASMRegister("t0");
-        var reg2=new ASMRegister("t1");
-        var reg3=new ASMRegister("t2");
+        //用t4，t5保存两个操作数
+        var reg1=new ASMRegister("t4");
+        var reg2=new ASMRegister("t5");
 
         loadReg(it.op1,reg1);
         loadReg(it.op2,reg2);
-        curBlock.addIns(new ASMarith("sub",reg1,reg2,reg3));
+        curBlock.addIns(new ASMarith("sub",reg1,reg2,reg2));
         var op=it.cond;
         if(op.equals("eq")){//==
-            curBlock.addIns(new ASMset(reg3,reg3,"seqz"));
+            curBlock.addIns(new ASMset(reg2,reg2,"seqz"));
         }else if(op.equals("ne")){//!=
-            curBlock.addIns(new ASMset(reg3,reg3,"snez"));
+            curBlock.addIns(new ASMset(reg2,reg2,"snez"));
         }else if(op.equals("sgt")){//>
-            curBlock.addIns(new ASMset(reg3,reg3,"sgtz"));
+            curBlock.addIns(new ASMset(reg2,reg2,"sgtz"));
         }else if(op.equals("sge")){//>=
             //reg1>reg2 || reg1==reg2
-            curBlock.addIns(new ASMset(reg1,reg3,"sgtz"));
-            curBlock.addIns(new ASMset(reg2,reg3,"seqz"));
-            curBlock.addIns(new ASMarith("or",reg1,reg2,reg3));
+            curBlock.addIns(new ASMset(reg1,reg2,"sgtz"));
+            curBlock.addIns(new ASMset(reg2,reg2,"seqz"));
+            curBlock.addIns(new ASMarith("or",reg1,reg2,reg2));
         }else if(op.equals("slt")){//<
-            curBlock.addIns(new ASMset(reg3,reg3,"sltz"));
+            curBlock.addIns(new ASMset(reg2,reg2,"sltz"));
         }else if(op.equals("sle")){//<=
             //reg1<reg2 || reg1==reg2
-            curBlock.addIns(new ASMset(reg1,reg3,"sltz"));
-            curBlock.addIns(new ASMset(reg2,reg3,"seqz"));
-            curBlock.addIns(new ASMarith("or",reg1,reg2,reg3));
+            curBlock.addIns(new ASMset(reg1,reg2,"sltz"));
+            curBlock.addIns(new ASMset(reg2,reg2,"seqz"));
+            curBlock.addIns(new ASMarith("or",reg1,reg2,reg2));
 
         }
         int offset=curFunc.getVar_offset(it.result);
-        AddStore(reg3,new ASMAddr(new ASMRegister("sp"),offset));
+        AddStore(reg2,new ASMAddr(new ASMRegister("sp"),offset));
     }
 
     public void visit(Load it){
         //load的result一定是局部变量，且不会是alloca出来的
         curBlock.addIns(new ASMcomment(it.toString()));
-        var reg1=new ASMRegister("t0");//用于临时存储
-        var reg2=new ASMRegister("t1");
+        var reg1=new ASMRegister("t5");//用于临时存储
         var sp=new ASMRegister("sp");
         if(it.pointer.charAt(0)=='@'){//全局变量
-            curBlock.addIns(new ASMla(reg1, it.pointer));//reg1中存pointer指向的地址
-            curBlock.addIns(new ASMlw(reg2,new ASMAddr(reg1,0)));//reg2中存pointer指向的值
+            curBlock.addIns(new ASMla(reg1, it.pointer));//存pointer指向的地址
+            curBlock.addIns(new ASMlw(reg1,new ASMAddr(reg1,0)));//存pointer指向的值
             int offset1=curFunc.getVar_offset(it.result);
-            AddStore(reg2,new ASMAddr(sp,offset1));
+            AddStore(reg1,new ASMAddr(sp,offset1));
         }else{//局部变量
             loadReg(it.pointer,reg1);//reg1中存pointer指向的地址
-            curBlock.addIns(new ASMlw(reg2,new ASMAddr(reg1,0)));//reg2中存pointer指向地址的值
+            curBlock.addIns(new ASMlw(reg1,new ASMAddr(reg1,0)));//存pointer指向地址的值
             int offset1=curFunc.getVar_offset(it.result);
-            AddStore(reg2,new ASMAddr(sp,offset1));
+            AddStore(reg1,new ASMAddr(sp,offset1));
         }
     }
 
@@ -379,13 +380,13 @@ public class ASMBuilder implements IRVisitor {
 
     public void visit(Select it){
         curBlock.addIns(new ASMcomment(it.toString()));
-        var reg1=new ASMRegister("t0");
-        var reg2=new ASMRegister("t1");
-        loadReg(it.cond,reg1);//把条件载入t0
-        loadReg(it.val1,reg2);//先把第一个值载入t1
+        var reg1=new ASMRegister("t5");
+        var reg2=new ASMRegister("t4");
+        loadReg(it.cond,reg1);//把条件载入t5
+        loadReg(it.val1,reg2);//先把第一个值载入t4
         String tmplabel="select."+program.select_cnt++;
         curBlock.addIns(new ASMbranch(reg1,tmplabel,"bnez"));//如果条件正确，则已经完成，则跳转到tmplabel块进行赋值
-        loadReg(it.val2,reg2);//否则，把第二个值载入t1
+        loadReg(it.val2,reg2);//否则，把第二个值载入t4
         curBlock=curFunc.addBlock(new ASMBlock(tmplabel));
 
         int offset=curFunc.getVar_offset(it.result);
@@ -395,8 +396,8 @@ public class ASMBuilder implements IRVisitor {
     public void visit(Store it){
         //store的pointer不会是参数，只会是局部变量和全局变量
         curBlock.addIns(new ASMcomment(it.toString()));
-        var reg1=new ASMRegister("t0");//value
-        var reg2=new ASMRegister("t1");//ptr
+        var reg1=new ASMRegister("t5");//value
+        var reg2=new ASMRegister("t6");//ptr
         var sp=new ASMRegister("sp");
         loadReg(it.value,reg1);//reg1里面有要存的值
         if(it.pointer.charAt(0)=='@'){//全局变量
