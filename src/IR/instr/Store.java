@@ -23,6 +23,12 @@ public class Store extends Instruction{
     }
 
     @Override
+    public void getUseDef(){
+        addUse(value);
+        addUse(pointer);
+    }
+
+    @Override
     public String toString() {
         return "\t"+"store "+type+" "+value+", ptr "+pointer+";\n";
     }

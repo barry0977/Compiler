@@ -23,6 +23,13 @@ public class Ret extends Instruction{
     }
 
     @Override
+    public void getUseDef(){
+        if(!type.equals("void")){
+            addUse(value);
+        }
+    }
+
+    @Override
     public String toString() {
         if(type.equals("void")){
             return "\tret void;\n";

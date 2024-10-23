@@ -34,6 +34,14 @@ public class Select extends Instruction {
     }
 
     @Override
+    public void getUseDef(){
+        def.add(result);
+        addUse(cond);
+        addUse(val1);
+        addUse(val2);
+    }
+
+    @Override
     public String toString() {
         return "\t"+result + " = select i1 " + cond + ", " + ty + " " + val1 + ", " + ty +" "+ val2+"\n";
     }

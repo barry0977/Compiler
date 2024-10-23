@@ -28,6 +28,16 @@ public class Getelementptr extends Instruction{
     }
 
     @Override
+    public void getUseDef(){
+        def.add(result);
+        addUse(pointer);
+        for(var index:idx){
+            addUse(index);
+        }
+    }
+
+
+    @Override
     public String toString() {
         StringBuilder sb=new StringBuilder();
         sb.append("\t");

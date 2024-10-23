@@ -59,6 +59,13 @@ public class Icmp extends Instruction{
     }
 
     @Override
+    public void getUseDef(){
+        def.add(result);
+        addUse(op1);
+        addUse(op2);
+    }
+
+    @Override
     public String toString(){
         return "\t"+result+" = icmp "+cond+" "+ty+" "+op1+", "+op2+";\n";
     }

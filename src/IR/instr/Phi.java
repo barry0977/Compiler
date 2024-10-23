@@ -36,6 +36,14 @@ public class Phi extends Instruction {
     }
 
     @Override
+    public void getUseDef(){
+        def.add(result);
+        for(var value:vals){
+            addUse(value);
+        }
+    }
+
+    @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("\t");

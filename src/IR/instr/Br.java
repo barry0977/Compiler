@@ -33,6 +33,13 @@ public class Br extends Instruction {
     }
 
     @Override
+    public void getUseDef(){
+        if(haveCondition){
+            addUse(cond);
+        }
+    }
+
+    @Override
     public String toString(){
         if(haveCondition){
             return "\t"+"br i1 "+cond+", label %"+iftrue+",label %"+iffalse+";\n";

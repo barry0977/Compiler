@@ -35,6 +35,16 @@ public class Call extends Instruction {
     }
 
     @Override
+    public void getUseDef(){
+        for(var args:ArgsVal){
+            addUse(args);
+        }
+        if(!ResultType.equals("void")){
+            def.add(result);
+        }
+    }
+
+    @Override
     public String toString() {
         StringBuilder builder = new StringBuilder();
         builder.append("\t");

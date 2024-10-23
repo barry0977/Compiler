@@ -19,6 +19,11 @@ public class Alloca extends Instruction{
     }
 
     @Override
+    public void getUseDef(){
+        def.add(result);
+    }
+
+    @Override
     public String toString() {
         return "\t"+result+" = alloca "+type+";\n";
     }

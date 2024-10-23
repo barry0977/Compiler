@@ -66,6 +66,13 @@ public class Binary extends Instruction {
     }
 
     @Override
+    public void getUseDef(){
+        def.add(result);
+        addUse(lhs);
+        addUse(rhs);
+    }
+
+    @Override
     public String toString(){
         return "\t"+result+" = "+op+" "+ty+" "+lhs+", "+rhs+"\n";
     }

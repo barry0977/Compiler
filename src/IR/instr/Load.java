@@ -23,6 +23,12 @@ public class Load extends Instruction{
     }
 
     @Override
+    public void getUseDef(){
+        def.add(result);
+        addUse(pointer);
+    }
+
+    @Override
     public String toString() {
         return "\t"+result+" = load "+type+", ptr "+pointer+";\n";
     }
