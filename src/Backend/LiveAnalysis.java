@@ -92,10 +92,9 @@ public class LiveAnalysis {
         boolean changed = true;
         while(changed){
             changed = false;
-            ArrayDeque<Instruction>queue = new ArrayDeque<>();
-            HashSet<Instruction>visited = new HashSet<>();//可能会出现环，要记录是否访问，防止无法结束
-            queue.addAll(exit);
-            visited.addAll(exit);
+            ArrayDeque<Instruction> queue = new ArrayDeque<>(exit);
+            //可能会出现环，要记录是否访问，防止无法结束
+            HashSet<Instruction> visited = new HashSet<>(exit);
             while(!queue.isEmpty()){
                 Instruction instr = queue.poll();
                 HashSet<String>new_in=new HashSet<>();

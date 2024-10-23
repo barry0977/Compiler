@@ -23,7 +23,7 @@ abstract public class Instruction extends IRNode {
     abstract public void getUseDef();
 
     public void addUse(String obj) {
-        if(obj.charAt(0)=='%'){//是局部变量(全局变量和常量不是use)
+        if(obj != null && obj.charAt(0)=='%'){//是局部变量(全局变量和常量不是use)
             use.add(obj);
         }
     }
