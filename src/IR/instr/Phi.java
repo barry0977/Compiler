@@ -26,6 +26,16 @@ public class Phi extends Instruction {
         label_order = new HashMap<>();
     }
 
+    public void changeBlock(String oldBlock, String newBlock) {
+        for(int i=0;i<labels.size();i++) {
+            if(labels.get(i).equals(oldBlock)) {
+                labels.set(i,newBlock);
+                label_order.put(newBlock,label_order.get(oldBlock));
+                label_order.remove(oldBlock);
+            }
+        }
+    }
+
     @Override
     public void rename(HashMap<String, String> map){
         for(int i=0;i<vals.size();i++){

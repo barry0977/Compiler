@@ -52,6 +52,12 @@ public class Mem2Reg {
         rename(func.entry);
         //变量重命名
         replace();
+        ArrayList<IRBlock>toadd = new ArrayList<>();
+        SplitCriticalEdge(func.entry,toadd);
+        for(var block:func.body){
+            SplitCriticalEdge(block,toadd);
+        }
+        func.body.addAll(toadd);
     }
 
     //对于一个Alloca的局部变量，在所有def块的支配边界头部放置phi，再对预留了phi的块的支配边界头部放置phi，重复操作。
@@ -187,6 +193,38 @@ public class Mem2Reg {
                 instr.rename(replaceMap);
             }
             block.terminalStmt.rename(replaceMap);
+        }
+    }
+
+    public void SplitCriticalEdge(IRBlock block,ArrayList<IRBlock>list){
+        int suc_num=block.succ.size();
+        for(var succ:block.succ){
+            if(suc_num>1 && succ.pred.size()>1){
+                int blocknum=curFunc.blankcnt++;
+                IRBlock tmp = new IRBlock("blank."+blocknum);
+                tmp.terminalStmt=new Br(succ.label);
+                tmp.pred.add(block);
+                tmp.succ.add(succ);
+                block.succ.remove(succ);
+                block.succ.add(tmp);
+                succ.pred.remove(block);
+                succ.pred.add(tmp);
+                list.add(tmp);
+                for(var phiIns:succ.philist.values()){
+                    phiIns.changeBlock(block.label,"blank."+blocknum);
+                }
+                if(block.terminalStmt instanceof Br){
+                    if(((Br) block.terminalStmt).haveCondition){
+                        if(((Br) block.terminalStmt).iftrue.equals(succ.label)){
+                            ((Br) block.terminalStmt).iftrue="blank."+blocknum;
+                        }else{
+                            ((Br) block.terminalStmt).iffalse="blank."+blocknum;
+                        }
+                    }else{
+                        ((Br) block.terminalStmt).dest="blank."+blocknum;
+                    }
+                }
+            }
         }
     }
 }

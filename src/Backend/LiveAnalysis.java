@@ -30,13 +30,12 @@ public class LiveAnalysis {
             instr.getUseDef();
             if(i<func.entry.statements.size()-1){
                 instr.succs.add(func.entry.statements.get(i+1));
+            }else{
+                func.entry.terminalStmt.preds.add(instr);
+                instr.succs.add(func.entry.terminalStmt);
             }
             if(i>0){
                 instr.preds.add(func.entry.statements.get(i-1));
-                if(i==func.entry.statements.size()-1){
-                    func.entry.terminalStmt.preds.add(instr);
-                    instr.succs.add(func.entry.terminalStmt);
-                }
             }
         }
         func.entry.terminalStmt.getUseDef();
@@ -58,15 +57,14 @@ public class LiveAnalysis {
             for(int j=0;j<block.statements.size();j++){
                 Instruction instr = block.statements.get(j);
                 instr.getUseDef();
-                if(j<func.entry.statements.size()-1){
-                    instr.succs.add(func.entry.statements.get(j+1));
+                if(j<block.statements.size()-1){
+                    instr.succs.add(block.statements.get(j+1));
+                }else{
+                    block.terminalStmt.preds.add(instr);
+                    instr.succs.add(block.terminalStmt);
                 }
                 if(j>0){
                     instr.preds.add(block.statements.get(j-1));
-                    if(j==block.statements.size()-1){
-                        block.terminalStmt.preds.add(instr);
-                        instr.succs.add(block.terminalStmt);
-                    }
                 }
             }
             block.terminalStmt.getUseDef();

@@ -18,7 +18,9 @@ public class IRFuncDef extends IRNode {
     public int cnt=0;//用于一个函数中的匿名变量的命名
     public int Icnt=0;//用于newarray中手写循环的变量i的命名
     public int shortname=0;//用于块编号
+    public int blankcnt=0;//用于给critical edge分配块编号
     public ArrayList<IRBlock> body;
+    public int stacksize=0;
 
     public IRFuncDef(){
         entry=new IRBlock("entry");
