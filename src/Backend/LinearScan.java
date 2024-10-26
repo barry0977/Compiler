@@ -195,7 +195,7 @@ public class LinearScan {
                 if(!freeReg.get(i)){//找到了空闲的寄存器
                     freeReg.set(i);
                     usedPeriod[i]=cur.end;
-                    RegS_size=Math.max(RegS_size,i-11);
+                    RegS_size=Math.max(RegS_size,i-11);//计算使用的s寄存器的最大值
                     isAllocated=true;
                     func.RegAlloc.put(cur.register,i);
                     break;
@@ -206,6 +206,6 @@ public class LinearScan {
                 func.stacksize+=4;
             }
         }
-        func.stacksize+=4*RegS_size;
+        func.Regs_size=RegS_size;
     }
 }

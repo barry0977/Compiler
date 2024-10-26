@@ -22,9 +22,11 @@ public class IRFuncDef extends IRNode {
     public int Icnt=0;//用于newarray中手写循环的变量i的命名
     public int shortname=0;//用于块编号
     public int blankcnt=0;//用于给critical edge分配块编号
+
     public int stacksize=0;
     public HashMap<String,Integer>RegAlloc;//分配了寄存器的变量
     public HashSet<String>SpilledVar;//溢出到栈上的变量
+    public int Regs_size=0;//使用的s寄存器数量
 
     public IRFuncDef(){
         entry=new IRBlock("entry");
