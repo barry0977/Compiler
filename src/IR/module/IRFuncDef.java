@@ -8,6 +8,8 @@ import IR.type.IRType;
 import Util.Pair;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 
 public class IRFuncDef extends IRNode {
     public String name;
@@ -15,18 +17,22 @@ public class IRFuncDef extends IRNode {
     public ArrayList<IRType> paramtypes;//参数类型
     public ArrayList<String> paramnames;//参数名
     public IRBlock entry;
+    public ArrayList<IRBlock> body;
     public int cnt=0;//用于一个函数中的匿名变量的命名
     public int Icnt=0;//用于newarray中手写循环的变量i的命名
     public int shortname=0;//用于块编号
     public int blankcnt=0;//用于给critical edge分配块编号
-    public ArrayList<IRBlock> body;
     public int stacksize=0;
+    public HashMap<String,Integer>RegAlloc;//分配了寄存器的变量
+    public HashSet<String>SpilledVar;//溢出到栈上的变量
 
     public IRFuncDef(){
         entry=new IRBlock("entry");
         body=new ArrayList<>();
         paramtypes=new ArrayList<>();
         paramnames=new ArrayList<>();
+        RegAlloc=new HashMap<>();
+        SpilledVar=new HashSet<>();
     }
 
     public IRFuncDef(String name,String type){

@@ -2,12 +2,14 @@ package Backend;
 
 import IR.IRBlock;
 import IR.IRProgram;
+import IR.instr.Br;
 import IR.instr.Instruction;
 import IR.instr.Ret;
 import IR.module.IRFuncDef;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 
 public class LiveAnalysis {
@@ -24,7 +26,7 @@ public class LiveAnalysis {
     }
 
     //确定每条指令的前驱和后继,获取每条指令的def和use
-    public void GetPrepareWork(IRFuncDef func,ArrayList<Instruction>exit){
+    public void GetPrepareWork(IRFuncDef func,ArrayList<Instruction>exit,HashMap<String,HashSet<String>>phidefs){
         for(int i=0;i<func.entry.statements.size();i++){
             Instruction instr = func.entry.statements.get(i);
             instr.getUseDef();
@@ -54,6 +56,7 @@ public class LiveAnalysis {
 
         for(int i=0;i<func.body.size();i++){
             IRBlock block = func.body.get(i);
+            phidefs.put(block.label,new HashSet<String>());
             for(int j=0;j<block.statements.size();j++){
                 Instruction instr = block.statements.get(j);
                 instr.getUseDef();
@@ -67,6 +70,7 @@ public class LiveAnalysis {
                     instr.preds.add(block.statements.get(j-1));
                 }
             }
+
             block.terminalStmt.getUseDef();
             if(block.terminalStmt instanceof Ret){
                 exit.add(block.terminalStmt);
@@ -80,12 +84,30 @@ public class LiveAnalysis {
                     block.terminalStmt.succs.add(successor.statements.get(0));
                 }
             }
+            //phi中的use实际是在对应前驱块的最后被use
+            for(var phiIns:block.philist.values()){
+                phidefs.get(block.label).add(phiIns.result);
+                for(int k=0;k<phiIns.vals.size();k++){
+                    String val=phiIns.vals.get(k);
+                    if(val!=null && val.charAt(0)=='%'){
+                        for(var predBlock:block.pred){
+                            if(predBlock.label.equals(phiIns.labels.get(k))){
+                                predBlock.terminalStmt.use.add(val);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 
+    //不需要计算phi指令的in和out,因为use在前驱块的最后，计算活跃区间时只要考虑其def
+    //每个块最后一条指令的out要去掉后继块的phi的def,否则会被一直传递到最开始
     public void runLiveAnalysis(IRFuncDef func){
+        HashMap<String,HashSet<String>>phidefs=new HashMap<>();//记录每个块中phi指令的def
         ArrayList<Instruction>exit=new ArrayList<>();
-        GetPrepareWork(func,exit);
+        GetPrepareWork(func,exit,phidefs);
         //通过不动点迭代，从出口开始倒序BFS遍历控制流图，直到一次完整迭代前后没有变动
         boolean changed = true;
         while(changed){
@@ -105,6 +127,15 @@ public class LiveAnalysis {
                 }
                 for(var succ:instr.succs){//先计算out，对于出口指令，out[exit]=0
                     new_out.addAll(succ.in);
+                }
+                //去掉succ中phi的def
+                if(instr instanceof Br){
+                    if(((Br) instr).haveCondition){
+                        new_out.removeAll(phidefs.get(((Br) instr).iftrue));
+                        new_out.removeAll(phidefs.get(((Br) instr).iffalse));
+                    }else{
+                        new_out.removeAll(phidefs.get(((Br) instr).dest));
+                    }
                 }
                 new_in.addAll(instr.use);
                 new_in.addAll(new_out);
