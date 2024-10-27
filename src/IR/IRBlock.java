@@ -1,5 +1,6 @@
 package IR;
 
+import ASM.ASMBlock;
 import IR.instr.*;
 
 import java.util.ArrayList;
@@ -22,6 +23,10 @@ public class IRBlock extends IRNode {
 
     //phi放置
     public HashMap<String,Phi>philist;
+
+    //mv指令位置
+    public ASMBlock asmBlock;//所在的ASM块
+    public int line_order=0;//在该块中的行数
 
     public IRBlock(String label) {
         this.label = label;

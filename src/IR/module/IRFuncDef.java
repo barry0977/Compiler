@@ -28,6 +28,8 @@ public class IRFuncDef extends IRNode {
     public HashSet<String>SpilledVar;//溢出到栈上的变量
     public int Regs_size=0;//使用的s寄存器数量
 
+    public HashMap<String,IRBlock>blockmap;//建立label到块的映射
+
     public IRFuncDef(){
         entry=new IRBlock("entry");
         body=new ArrayList<>();
@@ -35,6 +37,7 @@ public class IRFuncDef extends IRNode {
         paramnames=new ArrayList<>();
         RegAlloc=new HashMap<>();
         SpilledVar=new HashSet<>();
+        blockmap=new HashMap<>();
     }
 
     public IRFuncDef(String name,String type){
@@ -46,6 +49,7 @@ public class IRFuncDef extends IRNode {
         paramnames=new ArrayList<>();
         RegAlloc=new HashMap<>();
         SpilledVar=new HashSet<>();
+        blockmap=new HashMap<>();
     }
 
     public IRBlock addBlock(IRBlock block){
@@ -65,6 +69,13 @@ public class IRFuncDef extends IRNode {
             res.add(new Pair<>(((Alloca) entry.terminalStmt).result,((Alloca) entry.terminalStmt).type));
         }
         return res;
+    }
+
+    public void setMap(){
+        blockmap.put(entry.label,entry);
+        for(var block:body){
+            blockmap.put(block.label,block);
+        }
     }
 
     @Override

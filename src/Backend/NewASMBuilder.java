@@ -19,7 +19,9 @@ public class NewASMBuilder implements IRVisitor {
     public ASMProgram program;
     public ASMBlock curBlock;
     public ASMFuncDef curFunc;
-    public IRFuncDef curIRFunc;
+    public IRBlock curIRBlock;
+
+    public IRFuncDef curIRFunc;//for phiElimination
 
 
     public NewASMBuilder(ASMProgram _program) {
@@ -205,6 +207,7 @@ public class NewASMBuilder implements IRVisitor {
         if(!it.label.equals("entry")){
             curBlock=curFunc.addBlock(new ASMBlock(curFunc.name+"."+it.label));
         }
+        curIRBlock=it;
         for(var ins:it.statements){
             Iterator<String> iterator=ins.def.iterator();
             if(iterator.hasNext()){//有def，如果def没有被使用过，则不执行这条指令
@@ -233,7 +236,6 @@ public class NewASMBuilder implements IRVisitor {
         ASMFuncDef Function=new ASMFuncDef(it.name,it.paramnames.size());
         program.funcs.add(Function);
         curFunc=Function;
-        curIRFunc=it;
 
         for(int i=0;i<it.paramnames.size();i++){//传入参数
             Function.args_ord.put(it.paramnames.get(i),i);
@@ -358,6 +360,10 @@ public class NewASMBuilder implements IRVisitor {
     //br的立即数范围较小，最好用jump指令
     public void visit(Br it){
         curBlock.addIns(new ASMcomment(it.toString()));
+        //此时一定是一个IRBlock的teriminalStatement
+        curIRBlock.asmBlock=curBlock;
+        curIRBlock.line_order=curBlock.body.size();
+
         if(it.haveCondition){
             var reg1=new ASMRegister("t5");
             String truelabel=curFunc.name+"."+it.iftrue;
@@ -545,6 +551,11 @@ public class NewASMBuilder implements IRVisitor {
 
     public void visit(Ret it){
         curBlock.addIns(new ASMcomment(it.toString()));
+
+        //此时一定是一个IRBlock的teriminalStatement
+        curIRBlock.asmBlock=curBlock;
+        curIRBlock.line_order=curBlock.body.size();
+
         ASMRegister a0=new ASMRegister("a0");
         if(!it.type.equals("void")){
             if(it.value==null){
@@ -629,6 +640,24 @@ public class NewASMBuilder implements IRVisitor {
                 int offset=curFunc.getVar_offset(it.pointer);//存的地址
                 AddLoad(reg2,new ASMAddr(sp,offset));//指向的位置
                 AddStore(reg1,new ASMAddr(reg2,0));
+            }
+        }
+    }
+
+    //消除phi
+    public void PhiElimination(IRFuncDef func){
+        curIRFunc=func;
+        for(var block:func.body){
+            VisitBlockPhi(block);
+        }
+    }
+
+    public void VisitBlockPhi(IRBlock block){
+        for(var phiIns:block.philist.values()){
+            for(int i=0;i<phiIns.vals.size();i++){
+                String value=phiIns.vals.get(i);
+                IRBlock src=curIRFunc.blockmap.get(phiIns.labels.get(i));
+
             }
         }
     }
