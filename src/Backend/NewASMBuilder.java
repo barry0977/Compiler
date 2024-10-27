@@ -92,8 +92,7 @@ public class NewASMBuilder implements IRVisitor {
                     }
                 }else{//存在stack中
                     int offset=curFunc.getArgs_offset(id)+curFunc.stacksize;
-                    ASMAddr addr=new ASMAddr(sp,offset);
-                    AddLoad(rd,addr);
+                    AddLoad(rd,new ASMAddr(sp,offset));
                 }
             }
         }else{//常量
@@ -110,6 +109,80 @@ public class NewASMBuilder implements IRVisitor {
             AddStore(rd,new ASMAddr(new ASMRegister("sp"),offset));
         }else{
             System.err.println("Store fail: from "+rd.toString()+" to "+result);
+        }
+    }
+
+    //储存Call指令的参数
+    public void StoreArgs(Call it){
+        ASMRegister sp=new ASMRegister("sp");
+        for(int i=0;i<it.ArgsVal.size();i++){
+            String value=it.ArgsVal.get(i);
+            if(i<8){//存到a0-7中
+                ASMRegister rd=new ASMRegister("a"+i);
+                if(value==null){
+                    curBlock.addIns(new ASMli(rd,0));
+                }else if(value.charAt(0)=='@'){//全局变量
+                    curBlock.addIns(new ASMla(rd,value));
+                }else if(value.charAt(0)=='%'){//局部变量
+                    var id=curFunc.args_ord.get(value);
+                    if(id==null){//局部变量
+                        if(curFunc.var_on_reg.containsKey(value)){//分配了寄存器(不会是a_)
+                            curBlock.addIns(new ASMmv(rd,curFunc.getRegister(curFunc.var_on_reg.get(value))));
+                        }else{//在栈上
+                            int offset=curFunc.getVar_offset(value);
+                            AddLoad(rd,new ASMAddr(sp,offset));
+                        }
+                    }else{//参数
+                        if(id<8){//存在寄存器中
+                            if(i<id){//a_id寄存器还没被修改，可直接mv
+                                curBlock.addIns(new ASMmv(rd,new ASMRegister("a"+id)));
+                            }else if(i>id){//已经被修改，得从栈上读取
+                                int index=curFunc.var_on_reg.get(value);
+                                AddLoad(rd,new ASMAddr(sp,curFunc.call_offset.get(index)));
+                            }//i=id,不需要移动
+                        }else{//存在stack中
+                            int offset=curFunc.getArgs_offset(id)+curFunc.stacksize;
+                            AddLoad(rd,new ASMAddr(sp,offset));
+                        }
+                    }
+                }else{//常量
+                    curBlock.addIns(new ASMli(rd,Integer.parseInt(value)));
+                }
+            }else{//存到栈中(只存要调用函数的参数，而不是原函数)
+                var tmp=new ASMRegister("t5");
+                int offset=curFunc.getArgs_offset(i);
+                if(value==null){
+                    curBlock.addIns(new ASMli(tmp,0));
+                    AddStore(tmp,new ASMAddr(sp,offset));
+                }else if(value.charAt(0)=='@'){//全局变量
+                    curBlock.addIns(new ASMla(tmp,value));
+                    AddStore(tmp,new ASMAddr(sp,offset));
+                }else if(value.charAt(0)=='%'){//局部变量
+                    var id=curFunc.args_ord.get(value);
+                    if(id==null){//局部变量
+                        if(curFunc.var_on_reg.containsKey(value)){//分配了寄存器(不会是a_)
+                            AddStore(curFunc.getRegister(curFunc.var_on_reg.get(value)),new ASMAddr(sp,offset));
+                        }else{//在栈上
+                            int offset1=curFunc.getVar_offset(value);
+                            AddLoad(tmp,new ASMAddr(sp,offset1));
+                            AddStore(tmp,new ASMAddr(sp,offset));
+                        }
+                    }else{//参数
+                        if(id<8){//存在寄存器中
+                            int index=curFunc.var_on_reg.get(value);
+                            AddLoad(tmp,new ASMAddr(sp,curFunc.call_offset.get(index)));
+                            AddStore(tmp,new ASMAddr(sp,offset));
+                        }else{//存在stack中
+                            int offset1=curFunc.getArgs_offset(id)+curFunc.stacksize;
+                            AddLoad(tmp,new ASMAddr(sp,offset1));
+                            AddStore(tmp,new ASMAddr(sp,offset));
+                        }
+                    }
+                }else{//常量
+                    curBlock.addIns(new ASMli(tmp,Integer.parseInt(value)));
+                    AddStore(tmp,new ASMAddr(sp,offset));
+                }
+            }
         }
     }
 
@@ -150,14 +223,15 @@ public class NewASMBuilder implements IRVisitor {
             Function.args_ord.put(it.paramnames.get(i),i);
         }
 
-        //检查所有call指令后out的变量，将这些变量的寄存器存下来
+        //检查所有call指令in的变量，将这些变量的寄存器存下来
+        //恢复时只需恢复out中的变量
         //也要把call参数中大于8个的部分存下来
         int cnt=0;
         for(var instr:it.entry.statements){
             if(instr instanceof Call){
                 curFunc.callArgsCnt=Math.max(curFunc.callArgsCnt,((Call) instr).ArgsVal.size());
-                for(var variable:instr.out){
-                    if((!variable.equals(((Call) instr).result))&&it.RegAlloc.containsKey(variable)){//不是call指令的def，并且保存在寄存器中
+                for(var variable:instr.in){
+                    if(it.RegAlloc.containsKey(variable)){//不是call指令的def，并且保存在寄存器中
                         if(it.RegAlloc.get(variable)<12){//s寄存器由callee保存，只需保存a和t
                             cnt++;
                         }
@@ -171,8 +245,8 @@ public class NewASMBuilder implements IRVisitor {
                 if(instr instanceof Call){
                     cnt=0;
                     curFunc.callArgsCnt=Math.max(curFunc.callArgsCnt,((Call) instr).ArgsVal.size());
-                    for(var variable:instr.out){
-                        if((!variable.equals(((Call) instr).result))&&it.RegAlloc.containsKey(variable)){//不是call指令的def，并且保存在寄存器中
+                    for(var variable:instr.in){
+                        if(it.RegAlloc.containsKey(variable)){//不是call指令的def，并且保存在寄存器中
                             if(it.RegAlloc.get(variable)<12){//s寄存器由callee保存，只需保存a和t
                                 cnt++;
                             }
@@ -291,8 +365,8 @@ public class NewASMBuilder implements IRVisitor {
         curFunc.call_offset=new HashMap<>();
         curFunc.istocall = true;
         int initpos=4*Math.max(0,curFunc.callArgsCnt-8)+4*curFunc.Regs_size;
-        for(var Reg:it.out){
-            if((!Reg.equals(it.result))&&curFunc.var_on_reg.containsKey(Reg)){//不是call指令的def，并且保存在寄存器中
+        for(var Reg:it.in){
+            if(curFunc.var_on_reg.containsKey(Reg)){//call指令的in，并且保存在寄存器中
                 int regno=curFunc.var_on_reg.get(Reg);
                 ASMRegister toSave;
                 if(regno<8){//a_
@@ -308,18 +382,19 @@ public class NewASMBuilder implements IRVisitor {
             }
         }
 
-        for(int i=0;i<it.ArgsVal.size();i++){
-            var reg2=new ASMRegister("t5");//用于临时存储参数
-            loadReg(it.ArgsVal.get(i),reg2);//把每个参数先存到t5中
-            if(i<8){//存到a0-7中
-                //TODO 如果是寄存器不会发生冲突的话，可以直接mv，不需要先从存到临时寄存器中
-                String reg_name="a"+i;
-                curBlock.addIns(new ASMmv(new ASMRegister(reg_name),reg2));
-            }else{//存到栈中(只存要调用函数的参数，而不是原函数)
-                int offset=curFunc.getArgs_offset(i);
-                curBlock.addIns(new ASMsw(reg1,new ASMAddr(sp,offset)));
-            }
-        }
+//        for(int i=0;i<it.ArgsVal.size();i++){
+//            var reg2=new ASMRegister("t5");//用于临时存储参数
+//            loadReg(it.ArgsVal.get(i),reg2);//把每个参数先存到t5中
+//            if(i<8){//存到a0-7中
+//                //TODO 如果是寄存器不会发生冲突的话，可以直接mv，不需要先从存到临时寄存器中
+//                String reg_name="a"+i;
+//                curBlock.addIns(new ASMmv(new ASMRegister(reg_name),reg2));
+//            }else{//存到栈中(只存要调用函数的参数，而不是原函数)
+//                int offset=curFunc.getArgs_offset(i);
+//                curBlock.addIns(new ASMsw(reg1,new ASMAddr(sp,offset)));
+//            }
+//        }
+        StoreArgs(it);
 
         curBlock.addIns(new ASMcall(it.FunctionName));
 
@@ -334,9 +409,8 @@ public class NewASMBuilder implements IRVisitor {
         }
 
         //再把a,t还原
-        initpos=4*Math.max(0,curFunc.callArgsCnt-8)+4*curFunc.Regs_size;
         for(var Reg:it.out){
-            if((!Reg.equals(it.result))&&curFunc.var_on_reg.containsKey(Reg)){//不是call指令的def，并且保存在寄存器中
+            if((!Reg.equals(it.result))&&curFunc.var_on_reg.containsKey(Reg)){//只需还原call指令的out，并且不是call指令的def，且保存在寄存器中
                 int regno=curFunc.var_on_reg.get(Reg);
                 ASMRegister toSave;
                 if(regno<8){//a_
@@ -346,8 +420,7 @@ public class NewASMBuilder implements IRVisitor {
                 }else{//s_
                     continue;
                 }
-                AddLoad(toSave,new ASMAddr(sp,initpos));
-                initpos+=4;
+                AddLoad(toSave,new ASMAddr(sp,curFunc.call_offset.get(regno)));
             }
         }
         curFunc.istocall=false;

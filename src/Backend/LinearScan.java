@@ -64,7 +64,7 @@ public class LinearScan {
     public void SetLinearOrder(IRFuncDef func){
         //获得CFG逆后序
         ArrayList<IRBlock>RPO = new DomTreeBuilder(program).ReversePostOrder(func);
-        int index=0;
+        int index=1;//参数属于第0个
         for(var block:RPO){
             for(var phiinstr:block.philist.values()){
                 InstrOrder.put(phiinstr,index);//每个块中phi并行执行，线性序应相同
@@ -82,7 +82,7 @@ public class LinearScan {
     //确定活跃区间
     //start应该是最早的out,end应该是最后的in
     public void SetLiveInterval(IRFuncDef func){
-        for(int i=0;i<Math.min(8,func.paramnames.size());i++){
+        for(int i=0;i<func.paramnames.size();i++){
             LiveInterval.put(func.paramnames.get(i),new Interval(func.paramnames.get(i),0,0));
         }
         for(var instr:func.entry.statements){
@@ -171,16 +171,19 @@ public class LinearScan {
     public void AllocateRegister(IRFuncDef func){
         int RegS_size=0;//使用的s开头的寄存器
         PriorityQueue<Interval>IntervalOrder=new PriorityQueue<>();
-        int[] usedPeriod=new int[24];//记录目前占用寄存器的变量的活跃end
+        int[] usedPeriod=new int[24];//记录目前占用寄存器的变量的活跃区间end
         BitSet freeReg=new BitSet(24);//0表示空闲，1表示被占用
         for(int i=0;i<Math.min(8,func.paramnames.size());i++){//a0-a7一开始被参数占用
             freeReg.set(i);
             usedPeriod[i]=LiveInterval.get(func.paramnames.get(i)).end;
+            func.RegAlloc.put(func.paramnames.get(i),i);
         }
         IntervalOrder.addAll(LiveInterval.values());
         while(!IntervalOrder.isEmpty()){
             Interval cur= IntervalOrder.poll();
-
+            if(cur.start==0){//参数已经分配过
+                continue;
+            }
             //先清理此时刻已经不活跃的寄存器
             int busy_bit = freeReg.nextSetBit(0);
             while(busy_bit!=-1){
