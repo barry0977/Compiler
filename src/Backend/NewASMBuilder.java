@@ -12,6 +12,7 @@ import IR.instr.*;
 import IR.module.*;
 
 import java.util.HashMap;
+import java.util.Iterator;
 
 
 public class NewASMBuilder implements IRVisitor {
@@ -126,8 +127,13 @@ public class NewASMBuilder implements IRVisitor {
                 }else if(value.charAt(0)=='%'){//局部变量
                     var id=curFunc.args_ord.get(value);
                     if(id==null){//局部变量
-                        if(curFunc.var_on_reg.containsKey(value)){//分配了寄存器(不会是a_)
-                            curBlock.addIns(new ASMmv(rd,curFunc.getRegister(curFunc.var_on_reg.get(value))));
+                        if(curFunc.var_on_reg.containsKey(value)){//分配了寄存器(a/t/s)
+                            int index=curFunc.var_on_reg.get(value);
+                            if(index>i){//没被修改，可直接mv
+                                curBlock.addIns(new ASMmv(rd,curFunc.getRegister(curFunc.var_on_reg.get(value))));
+                            }else if(index<i){//被修改，从栈上读取
+                                AddLoad(rd,new ASMAddr(sp,curFunc.call_offset.get(index)));
+                            }
                         }else{//在栈上
                             int offset=curFunc.getVar_offset(value);
                             AddLoad(rd,new ASMAddr(sp,offset));
@@ -200,7 +206,17 @@ public class NewASMBuilder implements IRVisitor {
             curBlock=curFunc.addBlock(new ASMBlock(curFunc.name+"."+it.label));
         }
         for(var ins:it.statements){
-            ins.accept(this);
+            Iterator<String> iterator=ins.def.iterator();
+            if(iterator.hasNext()){//有def，如果def没有被使用过，则不执行这条指令
+                String result=iterator.next();
+                if(curFunc.args_ord.containsKey(result)||curFunc.var_on_reg.containsKey(result)||curFunc.var_ord.containsKey(result)){
+                    ins.accept(this);
+                }else{
+                    continue;//跳过这条指令
+                }
+            }else{
+                ins.accept(this);
+            }
         }
         if(it.terminalStmt!=null){
             it.terminalStmt.accept(this);
@@ -229,6 +245,7 @@ public class NewASMBuilder implements IRVisitor {
         int cnt=0;
         for(var instr:it.entry.statements){
             if(instr instanceof Call){
+                cnt=0;
                 curFunc.callArgsCnt=Math.max(curFunc.callArgsCnt,((Call) instr).ArgsVal.size());
                 for(var variable:instr.in){
                     if(it.RegAlloc.containsKey(variable)){//不是call指令的def，并且保存在寄存器中

@@ -44,6 +44,8 @@ public class IRFuncDef extends IRNode {
         body=new ArrayList<>();
         paramtypes=new ArrayList<>();
         paramnames=new ArrayList<>();
+        RegAlloc=new HashMap<>();
+        SpilledVar=new HashSet<>();
     }
 
     public IRBlock addBlock(IRBlock block){
