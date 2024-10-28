@@ -33,8 +33,8 @@ ASMall:
 
 .PHONY: OPTa
 OPTa:
-	./testcases/optim/scripts/test_asm.bash 'java -cp /ulib/antlr-4.13.2-complete.jar:bin Main -S' $(file) src/IR/builtin/builtin.s
+	./testcases/codegen/scripts/test_asm.bash 'java -cp /ulib/antlr-4.13.2-complete.jar:bin Main -S' $(file) src/IR/builtin/builtin.s
 
 .PHONY: OPTall
 OPTall:
-	./testcases/optim/scripts/test_asm_all.bash 'java -cp /ulib/antlr-4.13.2-complete.jar:bin Main -S' testcases/optim/ src/IR/builtin/builtin.s
+	./testcases/codegen/scripts/test_asm_all.bash 'java -cp /ulib/antlr-4.13.2-complete.jar:bin Main -S' testcases/optim/ src/IR/builtin/builtin.s

@@ -13,10 +13,7 @@ import IR.module.*;
 import Util.Pair;
 import jdk.dynalink.beans.StaticClass;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.*;
 
 
 public class NewASMBuilder implements IRVisitor {
@@ -137,8 +134,13 @@ public class NewASMBuilder implements IRVisitor {
                             int index=curFunc.var_on_reg.get(value);
                             if(index>i){//没被修改，可直接mv
                                 curBlock.addIns(new ASMmv(rd,curFunc.getRegister(curFunc.var_on_reg.get(value))));
-                            }else if(index<i){//被修改，从栈上读取
-                                AddLoad(rd,new ASMAddr(sp,curFunc.call_offset.get(index)));
+                            }else if(index<i){//被修改
+                                if(curFunc.call_offset.containsKey(index)){//从栈上读取
+                                    AddLoad(rd,new ASMAddr(sp,curFunc.call_offset.get(index)));
+                                }else{//从S中读取
+                                    var rs=curFunc.getRegister(curFunc.Reg2S.get(index));
+                                    curBlock.addIns(new ASMmv(rd,rs));
+                                }
                             }
                         }else{//在栈上
                             int offset=curFunc.getVar_offset(value);
@@ -150,7 +152,12 @@ public class NewASMBuilder implements IRVisitor {
                                 curBlock.addIns(new ASMmv(rd,new ASMRegister("a"+id)));
                             }else if(i>id){//已经被修改，得从栈上读取
                                 int index=curFunc.var_on_reg.get(value);
-                                AddLoad(rd,new ASMAddr(sp,curFunc.call_offset.get(index)));
+                                if(curFunc.call_offset.containsKey(index)){
+                                    AddLoad(rd,new ASMAddr(sp,curFunc.call_offset.get(index)));
+                                }else{
+                                    var rs=curFunc.getRegister(curFunc.Reg2S.get(index));
+                                    curBlock.addIns(new ASMmv(rd,rs));
+                                }
                             }//i=id,不需要移动
                         }else{//存在stack中
                             int offset=curFunc.getArgs_offset(id)+curFunc.stacksize;
@@ -172,18 +179,38 @@ public class NewASMBuilder implements IRVisitor {
                 }else if(value.charAt(0)=='%'){//局部变量
                     var id=curFunc.args_ord.get(value);
                     if(id==null){//局部变量
-                        if(curFunc.var_on_reg.containsKey(value)){//分配了寄存器(不会是a_)
-                            AddStore(curFunc.getRegister(curFunc.var_on_reg.get(value)),new ASMAddr(sp,offset));
+                        if(curFunc.var_on_reg.containsKey(value)){//分配了寄存器(a/t/s)
+                            int index=curFunc.var_on_reg.get(value);
+                            if(curFunc.call_offset.containsKey(index)){//从栈上读取
+                                AddLoad(tmp,new ASMAddr(sp,curFunc.call_offset.get(index)));
+                                AddStore(tmp,new ASMAddr(sp,offset));
+                            }else{//从S中读取
+                                var rs=curFunc.getRegister(curFunc.Reg2S.get(index));
+                                AddStore(rs,new ASMAddr(sp,offset));
+                            }
                         }else{//在栈上
                             int offset1=curFunc.getVar_offset(value);
                             AddLoad(tmp,new ASMAddr(sp,offset1));
                             AddStore(tmp,new ASMAddr(sp,offset));
                         }
+
+//                        if(curFunc.var_on_reg.containsKey(value)){//分配了寄存器(不会是a_)
+//                            AddStore(curFunc.getRegister(curFunc.var_on_reg.get(value)),new ASMAddr(sp,offset));
+//                        }else{//在栈上
+//                            int offset1=curFunc.getVar_offset(value);
+//                            AddLoad(tmp,new ASMAddr(sp,offset1));
+//                            AddStore(tmp,new ASMAddr(sp,offset));
+//                        }
                     }else{//参数
                         if(id<8){//存在寄存器中
                             int index=curFunc.var_on_reg.get(value);
-                            AddLoad(tmp,new ASMAddr(sp,curFunc.call_offset.get(index)));
-                            AddStore(tmp,new ASMAddr(sp,offset));
+                            if(curFunc.call_offset.containsKey(index)){
+                                AddLoad(tmp,new ASMAddr(sp,curFunc.call_offset.get(index)));
+                                AddStore(tmp,new ASMAddr(sp,offset));
+                            }else{//在S寄存器中
+                                var rs=curFunc.getRegister(curFunc.Reg2S.get(index));
+                                AddStore(rs,new ASMAddr(sp,offset));
+                            }
                         }else{//存在stack中
                             int offset1=curFunc.getArgs_offset(id)+curFunc.stacksize;
                             AddLoad(tmp,new ASMAddr(sp,offset1));
@@ -250,42 +277,52 @@ public class NewASMBuilder implements IRVisitor {
             Function.args_ord.put(it.paramnames.get(i),i);
         }
 
+
+        curFunc.Regs_size=it.Regs_size;
         //检查所有call指令in的变量，将这些变量的寄存器存下来
         //恢复时只需恢复out中的变量
         //也要把call参数中大于8个的部分存下来
         int cnt=0;
+        int s_free=12;//空余的s寄存器
         for(var instr:it.entry.statements){
             if(instr instanceof Call){
                 cnt=0;
+                s_free=12;
                 curFunc.callArgsCnt=Math.max(curFunc.callArgsCnt,((Call) instr).ArgsVal.size());
                 for(var variable:instr.in){
                     if(it.RegAlloc.containsKey(variable)){//不是call指令的def，并且保存在寄存器中
                         if(it.RegAlloc.get(variable)<12){//s寄存器由callee保存，只需保存a和t
                             cnt++;
+                        }else{
+                            s_free--;
                         }
                     }
                 }
-                curFunc.reg_to_save_caller=Math.max(cnt,curFunc.reg_to_save_caller);
+                curFunc.reg_to_save_caller=Math.max(cnt-s_free,curFunc.reg_to_save_caller);
+                curFunc.Regs_size=Math.max(curFunc.Regs_size,12-Math.max(s_free-cnt,0));
             }
         }
         for(var block:it.body){
             for(var instr:block.statements){
                 if(instr instanceof Call){
                     cnt=0;
+                    s_free=12;
                     curFunc.callArgsCnt=Math.max(curFunc.callArgsCnt,((Call) instr).ArgsVal.size());
                     for(var variable:instr.in){
                         if(it.RegAlloc.containsKey(variable)){//不是call指令的def，并且保存在寄存器中
                             if(it.RegAlloc.get(variable)<12){//s寄存器由callee保存，只需保存a和t
                                 cnt++;
+                            }else{
+                                s_free--;
                             }
                         }
                     }
-                    curFunc.reg_to_save_caller=Math.max(cnt,curFunc.reg_to_save_caller);
+                    curFunc.reg_to_save_caller=Math.max(cnt-s_free,curFunc.reg_to_save_caller);
+                    curFunc.Regs_size=Math.max(curFunc.Regs_size,12-Math.max(s_free-cnt,0));
                 }
             }
         }
 
-        curFunc.Regs_size=it.Regs_size;
 
         //为所有溢出在栈上的变量分配位置
         for(var localvar:it.SpilledVar){
@@ -398,6 +435,16 @@ public class NewASMBuilder implements IRVisitor {
         curFunc.call_offset=new HashMap<>();
         curFunc.istocall = true;
         int initpos=4*Math.max(0,curFunc.callArgsCnt-8)+4*curFunc.Regs_size;
+        BitSet free_S=new BitSet(12);//1表示空闲，0表示被占用
+        free_S.set(0,12);
+        for(var Reg:it.in){
+            if(curFunc.var_on_reg.containsKey(Reg)){
+                int regno=curFunc.var_on_reg.get(Reg);
+                if(regno>=12){
+                    free_S.clear(regno-12);
+                }
+            }
+        }
         for(var Reg:it.in){
             if(curFunc.var_on_reg.containsKey(Reg)){//call指令的in，并且保存在寄存器中
                 int regno=curFunc.var_on_reg.get(Reg);
@@ -409,37 +456,26 @@ public class NewASMBuilder implements IRVisitor {
                 }else{//s_
                     continue;
                 }
-                curFunc.call_offset.put(regno,initpos);
-                AddStore(toSave,new ASMAddr(sp,initpos));
-                initpos+=4;
+                int first_free_s=free_S.nextSetBit(0);
+                if(first_free_s==-1){//没有空余S寄存器，存到栈上
+                    curFunc.call_offset.put(regno,initpos);
+                    AddStore(toSave,new ASMAddr(sp,initpos));
+                    initpos+=4;
+                }else{//存到空余S寄存器上
+                    curFunc.Reg2S.put(regno,first_free_s+12);
+                    var rds=curFunc.getRegister(first_free_s+12);
+                    curBlock.addIns(new ASMmv(rds,toSave));
+                    free_S.clear(first_free_s);
+                }
             }
         }
 
-//        for(int i=0;i<it.ArgsVal.size();i++){
-//            var reg2=new ASMRegister("t5");//用于临时存储参数
-//            loadReg(it.ArgsVal.get(i),reg2);//把每个参数先存到t5中
-//            if(i<8){//存到a0-7中
-//                //TODO 如果是寄存器不会发生冲突的话，可以直接mv，不需要先从存到临时寄存器中
-//                String reg_name="a"+i;
-//                curBlock.addIns(new ASMmv(new ASMRegister(reg_name),reg2));
-//            }else{//存到栈中(只存要调用函数的参数，而不是原函数)
-//                int offset=curFunc.getArgs_offset(i);
-//                curBlock.addIns(new ASMsw(reg1,new ASMAddr(sp,offset)));
-//            }
-//        }
         StoreArgs(it);
 
         curBlock.addIns(new ASMcall(it.FunctionName));
 
-
-        if(!it.ResultType.equals("void")&&it.result!=null){
-            if(curFunc.var_on_reg.containsKey(it.result)){//存在寄存器上
-                ASMRegister rd=curFunc.getRegister(curFunc.var_on_reg.get(it.result));
-                curBlock.addIns(new ASMmv(rd,new ASMRegister("a0")));
-            }else{//存在栈中
-                int offset=curFunc.getVar_offset(it.result);
-                AddStore(new ASMRegister("a0"),new ASMAddr(new ASMRegister("sp"),offset));
-            }
+        if(!it.ResultType.equals("void")&&it.result!=null){//先把结果存到t5中
+            curBlock.addIns(new ASMmv(new ASMRegister("t5"),new ASMRegister("a0")));
         }
 
         //再把a,t还原
@@ -454,10 +490,25 @@ public class NewASMBuilder implements IRVisitor {
                 }else{//s_
                     continue;
                 }
-                AddLoad(toSave,new ASMAddr(sp,curFunc.call_offset.get(regno)));
+                if(curFunc.call_offset.containsKey(regno)){//存在栈上
+                    AddLoad(toSave,new ASMAddr(sp,curFunc.call_offset.get(regno)));
+                }else{//存在S寄存器中
+                    var rds=curFunc.getRegister(curFunc.Reg2S.get(regno));
+                    curBlock.addIns(new ASMmv(toSave,rds));
+                }
             }
         }
         curFunc.istocall=false;
+
+        if(!it.ResultType.equals("void")&&it.result!=null){
+            if(curFunc.var_on_reg.containsKey(it.result)){//存在寄存器上
+                ASMRegister rd=curFunc.getRegister(curFunc.var_on_reg.get(it.result));
+                curBlock.addIns(new ASMmv(rd,new ASMRegister("t5")));
+            }else{//存在栈中
+                int offset=curFunc.getVar_offset(it.result);
+                AddStore(new ASMRegister("t5"),new ASMAddr(new ASMRegister("sp"),offset));
+            }
+        }
     }
 
     public void visit(Getelementptr it){
@@ -562,6 +613,8 @@ public class NewASMBuilder implements IRVisitor {
 
     public void visit(Ret it){
         curBlock.addIns(new ASMcomment(it.toString()));
+        var ra=new ASMRegister("ra");//返回地址
+        var sp=new ASMRegister("sp");//栈指针
 
         //此时一定是一个IRBlock的teriminalStatement
         curIRBlock.asmBlock=curBlock;
@@ -576,7 +629,6 @@ public class NewASMBuilder implements IRVisitor {
             if(it.value.charAt(0)=='@'){//全局变量
                 curBlock.addIns(new ASMla(a0,it.value));
             }else if(it.value.charAt(0)=='%'){//局部变量
-                ASMRegister sp=new ASMRegister("sp");
                 var id=curFunc.args_ord.get(it.value);
                 if(id==null){//局部变量
                     if(curFunc.var_on_reg.containsKey(it.value)){//已经分配了寄存器，则直接返回该寄存器
@@ -599,13 +651,11 @@ public class NewASMBuilder implements IRVisitor {
                 curBlock.addIns(new ASMli(a0,Integer.parseInt(it.value)));
             }
         }
-        var ra=new ASMRegister("ra");//返回地址
-        var sp=new ASMRegister("sp");//栈指针
 
         //把s寄存器还原
         for(int s =0;s<curFunc.Regs_size;s++){
             var sR=new ASMRegister("s"+s);
-            AddStore(sR,new ASMAddr(sp,4*Math.max(0,curFunc.callArgsCnt-8)+s*4));
+            AddLoad(sR,new ASMAddr(sp,4*Math.max(0,curFunc.callArgsCnt-8)+s*4));
         }
 
         AddLoad(ra,new ASMAddr(sp,curFunc.stacksize-4));//lw ra,stacksize-4(sp)
@@ -687,58 +737,6 @@ public class NewASMBuilder implements IRVisitor {
     }
 
     //消除phi
-    public class PhiAssignNode{
-        //phi的结果只可能是寄存器或者是栈上的值
-        public int RegIndex=0;//储存在寄存器上
-        public int StackOffset=0;//储存在栈上
-        public int value=0;//常数
-        public String GlobalPtr;//全局变量
-        public int type;//0表示常数，1表示寄存器，2表示栈上的值,3表示全局指针
-
-        public PhiAssignNode(String obj){
-            if(obj==null){
-                type=0;
-                value=0;
-            }else if(obj.charAt(0)=='@'){//全局变量
-                type=3;
-                GlobalPtr=obj;
-            }else if(obj.charAt(0)=='%'){//局部变量
-                if(curFunc.var_on_reg.containsKey(obj)){
-                    type=1;
-                    RegIndex=curFunc.var_on_reg.get(obj);
-                }else{
-                    type=2;
-                    if(curFunc.args_ord.containsKey(obj)){
-                        int id=curFunc.args_ord.get(obj);
-                        StackOffset=curFunc.getArgs_offset(id)+curFunc.stacksize;
-                    }else{
-                        StackOffset=curFunc.getVar_offset(obj);
-                    }
-                }
-            }else{//常数
-                type=0;
-                value=Integer.parseInt(obj);
-            }
-        }
-
-        //判断两个节点是否是同一个节点
-        public boolean Equal(PhiAssignNode other){
-            if(type!=other.type){
-                return false;
-            }else{
-                if(type==0){
-                    return value==other.value;
-                }else if(type==1){
-                    return RegIndex==other.RegIndex;
-                }else if(type==2){
-                    return StackOffset==other.StackOffset;
-                }else{
-                    return GlobalPtr.equals(other.GlobalPtr);
-                }
-            }
-        }
-    }
-
     public void PhiElimination(IRFuncDef func){
         curIRFunc=func;
         func.setMap();

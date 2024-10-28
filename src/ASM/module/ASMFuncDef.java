@@ -60,6 +60,7 @@ public class ASMFuncDef {
     public HashMap<String,Integer>var_ord;//储存在栈上的局部变量的顺序(从0开始)
     public HashMap<String,Integer>var_on_reg;//在寄存器中的全局变量的编号
     public HashMap<Integer,Integer> call_offset=new HashMap<>();//在Call之前把a和t寄存器存到栈中的偏移量
+    public HashMap<Integer,Integer> Reg2S=new HashMap<>();//也可以存在S中
 
 
     public ASMFuncDef(String name,int argscnt){
