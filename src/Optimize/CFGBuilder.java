@@ -5,7 +5,10 @@ import IR.IRProgram;
 import IR.instr.*;
 import IR.module.IRFuncDef;
 
+import java.beans.Visibility;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 
 public class CFGBuilder {
     public IRProgram program;
@@ -51,11 +54,21 @@ public class CFGBuilder {
     }
 
     public void visitFunc(IRFuncDef it){
+        HashSet<IRBlock> visited=new HashSet<>();
         curFunc = it;
         visitBlock(it.entry);
         for(var block:curFunc.body){
             visitBlock(block);
         }
+
+        dfsEntry(curFunc.entry,visited);
+        //去除entry块无法到达的节点
+//        ArrayList<IRBlock>deletelist = new ArrayList<>();
+//        for(var block:curFunc.body){
+//            if(!visited.contains(block)){
+//                deletelist.add(block);
+//            }
+//        }
         //去除entry无法到达的结点,即既不是entry,也没有前驱的block
         for(var block:curFunc.body){
             if(block.pred.isEmpty()){
@@ -73,4 +86,14 @@ public class CFGBuilder {
         }
         it.body.removeAll(deletelist);
     }
+
+    public void dfsEntry(IRBlock block,HashSet<IRBlock> visited){
+        visited.add(block);
+        for(var succ:block.succ){
+            if(!visited.contains(succ)){
+                dfsEntry(succ, visited);
+            }
+        }
+    }
 }
+

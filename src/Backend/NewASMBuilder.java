@@ -758,7 +758,7 @@ public class NewASMBuilder implements IRVisitor {
             for(int i=0;i<phiIns.vals.size();i++){
                 String value=phiIns.vals.get(i);
                 IRBlock src=curIRFunc.blockmap.get(phiIns.labels.get(i));
-                if(value.equals("null")){
+                if(value==null||value.equals("null")){
                     continue;
                 }
                 src.moves.add(new Pair<>(result,value));//存进对应的前驱块

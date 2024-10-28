@@ -343,10 +343,10 @@ public class IRBuilder implements ASTVisitor {
         it.scope.isFor=true;
         it.scope.ord=curFunc.shortname;
         curScope=it.scope;
+        int ord=curFunc.shortname++;
         if(it.initStmt != null){
             it.initStmt.accept(this);
         }
-        int ord=curFunc.shortname++;
         curBlock.addIns(new Br("for.cond."+ord));
 
         curBlock=curFunc.addBlock(new IRBlock("for.cond."+ord));
@@ -354,7 +354,7 @@ public class IRBuilder implements ASTVisitor {
             it.condition.accept(this);
             curBlock.addIns(new Br(lastExpr.temp,"for.body."+ord,"for.end."+ord));
         }else{
-            curBlock.addIns(new Br("for.body."+ord));
+            curBlock.addIns(new Br("1","for.body."+ord,"for.end."+ord));
         }
 
         curBlock=curFunc.addBlock(new IRBlock("for.body."+ord));

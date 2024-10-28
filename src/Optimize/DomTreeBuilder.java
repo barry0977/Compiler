@@ -74,7 +74,7 @@ public class DomTreeBuilder {
         }
         //获得直接支配节点/最近必经节点（IDom）
         //节点n的支配集中任意两个不同的节点，一个节点A必然为另一个节点B的必经节点。支配集中所有元素构成一条链，且直接支配节点的支配元素比当前节点少1
-        //func.entry.idom = func.entry;
+        func.entry.idom = func.entry;
         for(var block:func.body){//entry没有IDom
             int ind = index.get(block);
             var dom = Dom.get(ind);//该节点的支配集
