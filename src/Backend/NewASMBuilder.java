@@ -10,8 +10,12 @@ import IR.IRProgram;
 import IR.IRVisitor;
 import IR.instr.*;
 import IR.module.*;
+import Util.Pair;
+import jdk.dynalink.beans.StaticClass;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 
 
@@ -215,7 +219,12 @@ public class NewASMBuilder implements IRVisitor {
                 if(curFunc.args_ord.containsKey(result)||curFunc.var_on_reg.containsKey(result)||curFunc.var_ord.containsKey(result)){
                     ins.accept(this);
                 }else{
-                    continue;//跳过这条指令
+                    if(ins instanceof Call){//Call指令需要执行
+                        ((Call) ins).result=null;
+                        ins.accept(this);
+                    }else{
+                        continue;//跳过
+                    }
                 }
             }else{
                 ins.accept(this);
@@ -313,6 +322,7 @@ public class NewASMBuilder implements IRVisitor {
         for(var block:it.body){
             block.accept(this);
         }
+        PhiElimination(it);
     }
 
     public void visit(IRGlobalVarDef it){
@@ -421,7 +431,8 @@ public class NewASMBuilder implements IRVisitor {
 
         curBlock.addIns(new ASMcall(it.FunctionName));
 
-        if(!it.ResultType.equals("void")){
+
+        if(!it.ResultType.equals("void")&&it.result!=null){
             if(curFunc.var_on_reg.containsKey(it.result)){//存在寄存器上
                 ASMRegister rd=curFunc.getRegister(curFunc.var_on_reg.get(it.result));
                 curBlock.addIns(new ASMmv(rd,new ASMRegister("a0")));
@@ -602,15 +613,46 @@ public class NewASMBuilder implements IRVisitor {
         curBlock.addIns(new ASMret());
     }
 
+    public void LoadForSelect(String obj,ASMRegister rd){
+        if(obj==null){
+            curBlock.addIns(new ASMli(rd,0));
+            return;
+        }
+        if(obj.charAt(0)=='@'){//全局变量
+            curBlock.addIns(new ASMla(rd,obj));
+        }else if(obj.charAt(0)=='%'){//局部变量
+            ASMRegister sp=new ASMRegister("sp");
+            var id=curFunc.args_ord.get(obj);
+            if(id==null){//局部变量
+                if(curFunc.var_on_reg.containsKey(obj)){//已经分配了寄存器，mv
+                    int index=curFunc.var_on_reg.get(obj);
+                    curBlock.addIns(new ASMmv(rd,curFunc.getRegister(index)));
+                }else{//否则,从栈上读取
+                    int offset=curFunc.getVar_offset(obj);
+                    AddLoad(rd,new ASMAddr(sp,offset));
+                }
+            }else{//参数
+                if(id<8){//存在寄存器中
+                    curBlock.addIns(new ASMmv(rd,new ASMRegister("A"+id)));
+                }else{//存在stack中
+                    int offset=curFunc.getArgs_offset(id)+curFunc.stacksize;
+                    AddLoad(rd,new ASMAddr(sp,offset));
+                }
+            }
+        }else{//常量
+            curBlock.addIns(new ASMli(rd,Integer.parseInt(obj)));
+        }
+    }
+
     public void visit(Select it){
         curBlock.addIns(new ASMcomment(it.toString()));
         var reg1=new ASMRegister("t5");
         var reg2=new ASMRegister("t4");
         loadReg(it.cond,reg1);//把条件载入t5
-        loadReg(it.val1,reg2);//先把第一个值载入t4
+        LoadForSelect(it.val1,reg2);//先把第一个值载入t4
         String tmplabel="select."+program.select_cnt++;
         curBlock.addIns(new ASMbranch(reg1,tmplabel,"bnez"));//如果条件正确，则已经完成，则跳转到tmplabel块进行赋值
-        loadReg(it.val2,reg2);//否则，把第二个值载入t4
+        LoadForSelect(it.val2,reg2);//否则，把第二个值载入t4
         curBlock=curFunc.addBlock(new ASMBlock(tmplabel));
 
         if(curFunc.var_on_reg.containsKey(it.result)){//存在寄存器上
@@ -645,20 +687,367 @@ public class NewASMBuilder implements IRVisitor {
     }
 
     //消除phi
-    public void PhiElimination(IRFuncDef func){
-        curIRFunc=func;
-        for(var block:func.body){
-            VisitBlockPhi(block);
+    public class PhiAssignNode{
+        //phi的结果只可能是寄存器或者是栈上的值
+        public int RegIndex=0;//储存在寄存器上
+        public int StackOffset=0;//储存在栈上
+        public int value=0;//常数
+        public String GlobalPtr;//全局变量
+        public int type;//0表示常数，1表示寄存器，2表示栈上的值,3表示全局指针
+
+        public PhiAssignNode(String obj){
+            if(obj==null){
+                type=0;
+                value=0;
+            }else if(obj.charAt(0)=='@'){//全局变量
+                type=3;
+                GlobalPtr=obj;
+            }else if(obj.charAt(0)=='%'){//局部变量
+                if(curFunc.var_on_reg.containsKey(obj)){
+                    type=1;
+                    RegIndex=curFunc.var_on_reg.get(obj);
+                }else{
+                    type=2;
+                    if(curFunc.args_ord.containsKey(obj)){
+                        int id=curFunc.args_ord.get(obj);
+                        StackOffset=curFunc.getArgs_offset(id)+curFunc.stacksize;
+                    }else{
+                        StackOffset=curFunc.getVar_offset(obj);
+                    }
+                }
+            }else{//常数
+                type=0;
+                value=Integer.parseInt(obj);
+            }
+        }
+
+        //判断两个节点是否是同一个节点
+        public boolean Equal(PhiAssignNode other){
+            if(type!=other.type){
+                return false;
+            }else{
+                if(type==0){
+                    return value==other.value;
+                }else if(type==1){
+                    return RegIndex==other.RegIndex;
+                }else if(type==2){
+                    return StackOffset==other.StackOffset;
+                }else{
+                    return GlobalPtr.equals(other.GlobalPtr);
+                }
+            }
         }
     }
 
+    public void PhiElimination(IRFuncDef func){
+        curIRFunc=func;
+        func.setMap();
+        for(var block:func.body){
+            VisitBlockPhi(block);
+        }
+        HandleMoveOrder(func.entry);
+        for(var block:func.body){
+            HandleMoveOrder(block);
+        }
+    }
+
+    //把phi指令全都改成mv
     public void VisitBlockPhi(IRBlock block){
         for(var phiIns:block.philist.values()){
+            String result=phiIns.result;
             for(int i=0;i<phiIns.vals.size();i++){
                 String value=phiIns.vals.get(i);
                 IRBlock src=curIRFunc.blockmap.get(phiIns.labels.get(i));
-
+                if(value.equals("null")){
+                    continue;
+                }
+                src.moves.add(new Pair<>(result,value));//存进对应的前驱块
             }
+        }
+    }
+
+    public void AddStoreForPhi(ASMRegister rd,ASMAddr addr,IRBlock irBlock){
+        int offset=addr.offset;
+        ASMBlock asmBlock=irBlock.asmBlock;
+        int location;
+        if(offset<=2047&&offset>=-2048){
+            location=irBlock.line_order++;
+            asmBlock.body.add(location,new ASMsw(rd,addr));
+        }else{
+            location=irBlock.line_order++;
+            asmBlock.body.add(location,new ASMli(new ASMRegister("t6"),offset));
+            location=irBlock.line_order++;
+            asmBlock.body.add(location,new ASMarith("add",addr.reg,new ASMRegister("t6"),new ASMRegister("t6")));
+            location=irBlock.line_order++;
+            asmBlock.body.add(location,new ASMsw(rd,new ASMAddr(new ASMRegister("t6"),0)));
+        }
+    }
+
+    public void AddLoadForPhi(ASMRegister rd,ASMAddr addr,IRBlock irBlock){
+        int offset=addr.offset;
+        ASMBlock asmBlock=irBlock.asmBlock;
+        int location;
+        if(offset<=2047&&offset>=-2048){
+            location=irBlock.line_order++;
+            asmBlock.body.add(location,new ASMlw(rd,addr));
+        }else{
+            location=irBlock.line_order++;
+            asmBlock.body.add(location,new ASMli(new ASMRegister("t6"),offset));
+            location=irBlock.line_order++;
+            asmBlock.body.add(location,new ASMarith("add",addr.reg,new ASMRegister("t6"),new ASMRegister("t6")));
+            location=irBlock.line_order++;
+            asmBlock.body.add(location,new ASMlw(rd,new ASMAddr(new ASMRegister("t6"),0)));
+        }
+    }
+
+    //翻译move指令
+    public void AddMoveFromPhi(String dest,String value,IRBlock block){
+        ASMBlock asmBlock=block.asmBlock;
+        int location;
+        ASMRegister sp=new ASMRegister("sp");
+        if(curFunc.var_on_reg.containsKey(dest)){//存在寄存器
+            var rd=curFunc.getRegister(curFunc.var_on_reg.get(dest));
+            if(value==null){
+                location=block.line_order++;
+                asmBlock.body.add(location,new ASMli(rd,0));
+            }else if(value.charAt(0)=='@'){
+                location=block.line_order++;
+                asmBlock.body.add(location,new ASMla(rd,value));
+            }else if(value.charAt(0)=='%'){
+                if(curFunc.var_on_reg.containsKey(value)){
+                    var rs=curFunc.getRegister(curFunc.var_on_reg.get(value));
+                    if(!rs.name.equals(rd.name)){
+                        location=block.line_order++;
+                        asmBlock.body.add(location,new ASMmv(rd,rs));
+                    }
+                }else{
+                    if(curFunc.args_ord.containsKey(value)){//参数
+                        int id=curFunc.args_ord.get(value);
+                        int offset=curFunc.getArgs_offset(id)+curFunc.stacksize;
+                        AddLoadForPhi(rd,new ASMAddr(sp,offset),block);
+                    }else{
+                        int offset=curFunc.getVar_offset(value);
+                        AddLoadForPhi(rd,new ASMAddr(sp,offset),block);
+                    }
+                }
+            }else{
+                location=block.line_order++;
+                asmBlock.body.add(location,new ASMli(rd,Integer.parseInt(value)));
+            }
+        }else{//存在栈上
+            int offset=curFunc.getVar_offset(dest);
+            ASMRegister tmp=new ASMRegister("t5");
+            if(value==null){
+                location=block.line_order++;
+                asmBlock.body.add(location,new ASMli(tmp,0));
+                AddStoreForPhi(tmp,new ASMAddr(sp,offset),block);
+            }else if(value.charAt(0)=='@'){
+                location=block.line_order++;
+                asmBlock.body.add(location,new ASMla(tmp,value));
+                AddStoreForPhi(tmp,new ASMAddr(sp,offset),block);
+            }else if(value.charAt(0)=='%'){
+                if(curFunc.var_on_reg.containsKey(value)){
+                    var rs=curFunc.getRegister(curFunc.var_on_reg.get(value));
+                    AddStoreForPhi(rs,new ASMAddr(sp,offset),block);
+                }else{
+                    if(curFunc.args_ord.containsKey(value)){//参数
+                        int id=curFunc.args_ord.get(value);
+                        int offset1=curFunc.getArgs_offset(id)+curFunc.stacksize;
+                        AddLoadForPhi(tmp,new ASMAddr(sp,offset1),block);
+                        AddStoreForPhi(tmp,new ASMAddr(sp,offset),block);
+                    }else{
+                        int offset1=curFunc.getVar_offset(value);
+                        AddLoadForPhi(tmp,new ASMAddr(sp,offset1),block);
+                        AddStoreForPhi(tmp,new ASMAddr(sp,offset),block);
+                    }
+                }
+            }else{
+                location=block.line_order++;
+                asmBlock.body.add(location,new ASMli(tmp,Integer.parseInt(value)));
+                AddStoreForPhi(tmp,new ASMAddr(sp,offset),block);
+            }
+        }
+    }
+
+    //翻译move指令
+    public void AddMoveDirect(int dest,int value,IRBlock block){
+        ASMBlock asmBlock=block.asmBlock;
+        int location;
+        ASMRegister sp=new ASMRegister("sp");
+        if(dest<0){//dest为寄存器
+            var rd=curFunc.getRegister(-(dest+1));
+            if(value<0){//value为寄存器
+                var rs=curFunc.getRegister(-(value+1));
+                if(!rs.name.equals(rd.name)){
+                    location=block.line_order++;
+                    asmBlock.body.add(location,new ASMmv(rd,rs));
+                }
+            }else{//value为栈
+                AddLoadForPhi(rd,new ASMAddr(sp,value),block);
+            }
+        }else{//dest为栈
+            if(value<0){//value为寄存器
+                var rs=curFunc.getRegister(-(value+1));
+                AddStoreForPhi(rs,new ASMAddr(sp,dest),block);
+            }else{//value为栈
+                ASMRegister tmp=new ASMRegister("t5");
+                AddLoadForPhi(tmp,new ASMAddr(sp,value),block);
+                AddStoreForPhi(tmp,new ASMAddr(sp,dest),block);
+            }
+        }
+    }
+
+    //是否是常数或者全局指针
+    public boolean isConst(String obj){
+        if(obj==null){
+            return true;
+        }else if(obj.charAt(0)=='@'){
+            return true;
+        }else if(obj.charAt(0)=='%'){
+            return false;
+        }else{
+            return true;
+        }
+    }
+
+    public int getKey(String obj){
+        int key;
+        if(curFunc.var_on_reg.containsKey(obj)){//存在寄存器中
+            key=-curFunc.var_on_reg.get(obj)-1;//可能是0
+        }else{//存在栈上
+            if(curFunc.args_ord.containsKey(obj)){
+                int id=curFunc.args_ord.get(obj);
+                key=curFunc.getArgs_offset(id)+curFunc.stacksize;
+            }else{
+                key=curFunc.getVar_offset(obj);
+            }
+        }
+        return key;
+    }
+
+
+    //通过基环外向树（所有点入度为1）确定执行的先后顺序
+    public void HandleMoveOrder(IRBlock block){
+        if(block.moves.isEmpty()){
+            return;
+        }
+        ASMRegister sp=new ASMRegister("sp");
+        ArrayList<Pair<String,String>>ImmDef=new ArrayList<>();//存立即数，最后翻译
+        HashMap<Integer, HashSet<Integer>>succs=new HashMap<>();
+        HashMap<Integer,Integer>preds=new HashMap<>();
+        HashMap<Integer,Integer>visited=new HashMap<>();
+        for(int i=0;i<block.moves.size();i++){
+            var dest=block.moves.get(i).first;
+            var value=block.moves.get(i).second;
+            if(isConst(value)){//直接加入一个列表，最后翻译，不需要重排序
+                ImmDef.add(new Pair<>(dest,value));
+            }else{
+                int destkey=getKey(dest);
+                int srckey=getKey(value);
+                if(succs.containsKey(srckey)){
+                    succs.get(srckey).add(destkey);
+                }else{
+                    succs.put(srckey,new HashSet<>());
+                    succs.get(srckey).add(destkey);
+                }
+                preds.put(destkey,srckey);
+                visited.put(srckey,0);
+                visited.put(destkey,0);
+            }
+        }
+
+        int size=preds.size();
+        for(var node:preds.keySet()){
+            if(visited.get(node)==1){//已经访问过
+                continue;
+            }
+            int cur=node;
+            boolean isRing=true;//是否有环
+            int root=0;//如果是链，则有根节点
+            while(visited.get(cur)!=1){
+                visited.put(cur,1);
+                if(preds.containsKey(cur)){//有前驱
+                    cur=preds.get(cur);
+                }else{//已经到头
+                    isRing=false;
+                    root=cur;
+                    break;
+                }
+            }
+            if(isRing){//环
+                HashSet<Integer>ring=new HashSet<>();
+                ring.add(cur);
+                int begin=preds.get(cur);
+                while(begin!=cur){
+                    ring.add(begin);
+                    begin=preds.get(begin);
+                }
+                //先对环上的每个点作为根节点，dfs
+                for(var ori:ring){
+                    visited.put(ori,1);
+                    dfs2(ori,ring,succs,preds,block,visited);
+                }
+                //先用临时寄存器把cur存起来
+                var tmpReg=new ASMRegister("t4");
+                if(cur<0){
+                    int line=block.line_order++;
+                    var curReg=curFunc.getRegister(-(cur+1));
+                    ASMBlock asmBlock=block.asmBlock;
+                    asmBlock.body.add(line,new ASMmv(tmpReg,curReg));
+                }else{
+                    AddLoadForPhi(tmpReg,new ASMAddr(sp,cur),block);
+                }
+                //绕着环赋值一遍
+                int now=cur;
+                while(preds.get(now)!=cur){
+                    AddMoveDirect(now,preds.get(now),block);
+                    now=preds.get(now);
+                }
+                //从临时寄存器中取出存到now中
+                if(now<0){
+                    int line=block.line_order++;
+                    var nowReg=curFunc.getRegister(-(now+1));
+                    ASMBlock asmBlock=block.asmBlock;
+                    asmBlock.body.add(line,new ASMmv(nowReg,tmpReg));
+                }else{
+                    AddStoreForPhi(tmpReg,new ASMAddr(sp,now),block);
+                }
+            }else{//链
+                //直接dfs执行
+                visited.put(root,1);
+                dfs1(root,succs,preds,block,visited);
+            }
+        }
+        //再进行常数赋值
+        for(var Imm:ImmDef){
+            AddMoveFromPhi(Imm.first,Imm.second,block);
+        }
+    }
+
+    //dfs一棵树
+    public void dfs1(int root,HashMap<Integer,HashSet<Integer>>succs,HashMap<Integer,Integer>preds,IRBlock block,HashMap<Integer,Integer>visited){
+        if(succs.containsKey(root)){
+            for(var child:succs.get(root)){
+                visited.put(child,1);
+                dfs1(child,succs,preds,block,visited);
+            }
+        }
+        if(preds.containsKey(root)){//dfs后序遍历
+            AddMoveDirect(root,preds.get(root),block);
+        }
+    }
+
+    public void dfs2(int root,HashSet<Integer>Ring,HashMap<Integer,HashSet<Integer>>succs,HashMap<Integer,Integer>preds,IRBlock block,HashMap<Integer,Integer>visited){
+        if(succs.containsKey(root)){
+            for(var child:succs.get(root)){
+                if(!Ring.contains(child)){
+                    visited.put(child,1);
+                    dfs1(child,succs,preds,block,visited);
+                }
+            }
+        }
+        if(preds.containsKey(root)&&!Ring.contains(root)){//不在环上
+            AddMoveDirect(root,preds.get(root),block);
         }
     }
 }

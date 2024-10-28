@@ -1,7 +1,9 @@
 package IR;
 
 import ASM.ASMBlock;
+import Backend.NewASMBuilder;
 import IR.instr.*;
+import Util.Pair;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -27,6 +29,7 @@ public class IRBlock extends IRNode {
     //mv指令位置
     public ASMBlock asmBlock;//所在的ASM块
     public int line_order=0;//在该块中的行数
+    public ArrayList<Pair<String,String>> moves=new ArrayList<>();//消phi产生的move指令
 
     public IRBlock(String label) {
         this.label = label;

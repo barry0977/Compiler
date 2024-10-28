@@ -1,6 +1,9 @@
 import ASM.ASMProgram;
 import AST.ProgramNode;
 import Backend.ASMBuilder;
+import Backend.LinearScan;
+import Backend.LiveAnalysis;
+import Backend.NewASMBuilder;
 import Frontend.ASTBuilder;
 import Frontend.IRBuilder;
 import Frontend.SemanticChecker;
@@ -48,18 +51,21 @@ public class Main {
             new CFGBuilder(irprogram).work();
             new DomTreeBuilder(irprogram).work();
             new Mem2Reg(irprogram).work();
+            new LiveAnalysis(irprogram).work();
+            new LinearScan(irprogram).work();
 
-            System.out.println(irprogram.toString());
+//            System.out.println(irprogram.toString());
             FileWriter writer=new FileWriter("src/IR/output.ll");
             writer.write(irprogram.toString());
             writer.close();
+
             //ASM
-//            ASMProgram asmProgram = new ASMProgram();
-//            new ASMBuilder(asmProgram).visit(irprogram);
-//            System.out.println(asmProgram.toString());
-//            FileWriter _writer=new FileWriter("test.s");
-//            _writer.write(asmProgram.toString());
-//            _writer.close();
+            ASMProgram asmProgram = new ASMProgram();
+            new NewASMBuilder(asmProgram).visit(irprogram);
+            System.out.println(asmProgram.toString());
+            FileWriter _writer=new FileWriter("test.s");
+            _writer.write(asmProgram.toString());
+            _writer.close();
         } catch (Error er) {
             System.err.println(er.toString());
             throw new RuntimeException();
