@@ -113,16 +113,22 @@ public class Mem2Reg {
     }
 
     public void rename(IRBlock block){
-        //创建一个副本，用于在函数末恢复
-        HashMap<String,Stack<String>>copy = new HashMap<>();
-        for(String key:valuestack.keySet()){
-            Stack<String> newStack = (Stack<String>) valuestack.get(key).clone();
-            copy.put(key,newStack);
-        }
+//        //创建一个副本，用于在函数末恢复
+//        HashMap<String,Stack<String>>copy = new HashMap<>();
+//        for(String key:valuestack.keySet()){
+//            Stack<String> newStack = (Stack<String>) valuestack.get(key).clone();
+//            copy.put(key,newStack);
+//        }
+        HashMap<String,Integer>updateCount = new HashMap<>();
         //所有phi语句也算def,也要更新last_def
         for(var phi:block.philist.keySet()){
             var phiIns = block.philist.get(phi);
             valuestack.get(phi).push(phiIns.result);
+            if(updateCount.containsKey(phi)){
+                updateCount.put(phi,updateCount.get(phi)+1);
+            }else{
+                updateCount.put(phi,1);
+            }
         }
 
         ArrayList<Instruction>deletelist = new ArrayList<>();
@@ -145,6 +151,11 @@ public class Mem2Reg {
                 if(AllocaVar.contains(name)){
                     deletelist.add(instr);
                     valuestack.get(name).push(((Store) instr).value);
+                    if(updateCount.containsKey(name)){
+                        updateCount.put(name,updateCount.get(name)+1);
+                    }else{
+                        updateCount.put(name,1);
+                    }
                 }
             }else if(instr instanceof Alloca){
                 deletelist.add(instr);
@@ -173,7 +184,11 @@ public class Mem2Reg {
         for(var dom_child:block.domChildren){
             rename(dom_child);
         }
-        valuestack = copy;
+        for(var entry:updateCount.entrySet()){
+            for(int i=0;i<entry.getValue();i++){
+                valuestack.get(entry.getKey()).pop();
+            }
+        }
     }
 
     //将每条语句中变量名替换，注意新放置的phi也需要替换
