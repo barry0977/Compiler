@@ -1,3 +1,13 @@
+binary_tree.mx
+dijkstra.mx
+humble.mx
+kruskal.mx
+lca.mx
+lunatic.mx
+maxflow.mx
+pi.mx
+segtree.mx
+sha_1.mx
 e1.mx
 e2.mx
 e3.mx
@@ -89,3 +99,6 @@ t71.mx
 t72.mx
 t73.mx
 t74.mx
+t75.mx
+t76.mx
+t77.mx
