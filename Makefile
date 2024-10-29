@@ -4,7 +4,7 @@ build:
 
 .PHONY: run
 run:
-	java -Xss40m cd bin && java -cp /ulib/antlr-4.13.2-complete.jar:. Main && cat ../src/IR/builtin/builtin.s
+	cd bin && java -cp /ulib/antlr-4.13.2-complete.jar:. Main && cat ../src/IR/builtin/builtin.s -Xss16m
 
 
 .PHONY: Sema
