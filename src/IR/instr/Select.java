@@ -9,6 +9,7 @@ public class Select extends Instruction {
     public String cond;
     public String ty;
     public String val1,val2;
+    public int type=0;//1-&&,2-||
 
     public Select(){}
 

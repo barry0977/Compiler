@@ -5,6 +5,7 @@ import IR.IRProgram;
 import IR.instr.Br;
 import IR.instr.Instruction;
 import IR.instr.Ret;
+import IR.instr.Select;
 import IR.module.IRFuncDef;
 
 import java.util.ArrayDeque;
@@ -110,8 +111,10 @@ public class LiveAnalysis {
         GetPrepareWork(func,exit,phidefs);
         //通过不动点迭代，从出口开始倒序BFS遍历控制流图，直到一次完整迭代前后没有变动
         boolean changed = true;
+        int cnt=0;
         while(changed){
             changed = false;
+            cnt++;
             ArrayDeque<Instruction> queue = new ArrayDeque<>(exit);
             //可能会出现环，要记录是否访问，防止无法结束
             HashSet<Instruction> visited = new HashSet<>(exit);
@@ -135,6 +138,15 @@ public class LiveAnalysis {
                         new_out.removeAll(phidefs.get(((Br) instr).iffalse));
                     }else{
                         new_out.removeAll(phidefs.get(((Br) instr).dest));
+                    }
+                }
+                for(var succ:instr.succs){
+                    if(succ instanceof Select){
+                        if(((Select) succ).type==1){//&&
+                            new_out.remove(((Select) succ).val1);
+                        }else if(((Select) succ).type==2){//||
+                            new_out.remove(((Select) succ).val2);
+                        }
                     }
                 }
                 new_in.addAll(instr.use);

@@ -566,9 +566,13 @@ public class IRBuilder implements ASTVisitor {
             curBlock=curFunc.addBlock(new IRBlock("logic.end."+ord));
             int suf2=curFunc.cnt++;
             if(it.opCode.equals("&&")){
-                curBlock.addIns(new Select("%_"+suf2,"%_"+suf,"i1","%_"+suf1,"0"));
+                Select ins=new Select("%_"+suf2,"%_"+suf,"i1","%_"+suf1,"0");
+                ins.type=1;
+                curBlock.addIns(ins);
             }else{
-                curBlock.addIns(new Select("%_"+suf2,"%_"+suf,"i1","1","%_"+suf1));
+                Select ins=new Select("%_"+suf2,"%_"+suf,"i1","1","%_"+suf1);
+                ins.type=2;
+                curBlock.addIns(ins);
             }
             lastExpr.temp="%_"+suf2;
             lastExpr.isConst=false;
