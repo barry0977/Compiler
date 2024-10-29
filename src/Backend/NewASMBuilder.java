@@ -11,7 +11,6 @@ import IR.IRVisitor;
 import IR.instr.*;
 import IR.module.*;
 import Util.Pair;
-import jdk.dynalink.beans.StaticClass;
 
 import java.util.*;
 
@@ -193,14 +192,6 @@ public class NewASMBuilder implements IRVisitor {
                             AddLoad(tmp,new ASMAddr(sp,offset1));
                             AddStore(tmp,new ASMAddr(sp,offset));
                         }
-
-//                        if(curFunc.var_on_reg.containsKey(value)){//分配了寄存器(不会是a_)
-//                            AddStore(curFunc.getRegister(curFunc.var_on_reg.get(value)),new ASMAddr(sp,offset));
-//                        }else{//在栈上
-//                            int offset1=curFunc.getVar_offset(value);
-//                            AddLoad(tmp,new ASMAddr(sp,offset1));
-//                            AddStore(tmp,new ASMAddr(sp,offset));
-//                        }
                     }else{//参数
                         if(id<8){//存在寄存器中
                             int index=curFunc.var_on_reg.get(value);
@@ -372,13 +363,41 @@ public class NewASMBuilder implements IRVisitor {
 
     public void visit(Alloca it){}
 
+    public int getImmNum(Binary it){
+        String lhs=it.lhs;
+        String rhs=it.rhs;
+        int res=0;
+        if(lhs==null){
+            res++;
+        }else if(lhs.charAt(0)!='%'&& rhs.charAt(0)!='@'){
+            res++;
+        }
+
+        if(rhs==null){
+            res++;
+        }else if(rhs.charAt(0)!='%' && rhs.charAt(0)!='@'){
+            res++;
+        }
+        return res;
+    }
+
+    public int leftOrRight(Binary it){
+        String lhs=it.lhs;
+        String rhs=it.rhs;
+
+        if(lhs==null||(lhs.charAt(0)!='%'&& rhs.charAt(0)!='@')){
+            return 1;
+        }else{
+            return 2;
+        }
+    }
+
     public void visit(Binary it){
         curBlock.addIns(new ASMcomment(it.toString()));
         var reg1=new ASMRegister("t5");
         var reg2=new ASMRegister("t6");
 
-        loadReg(it.lhs,reg1);
-        loadReg(it.rhs,reg2);
+        int imm_num=getImmNum(it);
 
         String op=it.op;
         switch(op){
@@ -394,6 +413,117 @@ public class NewASMBuilder implements IRVisitor {
             case "xor":op="xor";break;
         }
 
+        if(!(op.equals("mul")||op.equals("div")||op.equals("rem"))){//如果有立即数，可以对应转换为立即数版本指令
+            if(imm_num==2){
+                int a,b;
+                if(it.lhs==null){
+                    a=0;
+                }else{
+                    a=Integer.parseInt(it.lhs);
+                }
+                if(it.rhs==null){
+                    b=0;
+                }else{
+                    b=Integer.parseInt(it.rhs);
+                }
+                int ans=0;
+                if(op.equals("add")){
+                    ans=a+b;
+                }else if(op.equals("sub")){
+                    ans=a-b;
+                }else if(op.equals("sll")){
+                    ans=a<<b;
+                }else if(op.equals("sra")){
+                    ans=a>>b;
+                }else if(op.equals("and")){
+                    ans=a&b;
+                }else if(op.equals("or")){
+                    ans=a|b;
+                }else if(op.equals("xor")){
+                    ans=a^b;
+                }
+                if(curFunc.var_on_reg.containsKey(it.result)){//存在寄存器上
+                    curBlock.addIns(new ASMli(curFunc.getRegister(curFunc.var_on_reg.get(it.result)),ans));
+                }else{//存在栈中
+                    curBlock.addIns(new ASMli(reg1,ans));
+                    int offset=curFunc.getVar_offset(it.result);
+                    AddStore(reg1,new ASMAddr(new ASMRegister("sp"),offset));
+                }
+                return;
+            }else if(imm_num==1){
+                int LR=leftOrRight(it);
+                if(LR==1){//左边是立即数,除左移右移减法，其他可以互换
+                    int imm;
+                    if(it.lhs==null){
+                        imm=0;
+                    }else{
+                        imm=Integer.parseInt(it.lhs);
+                    }
+                    if(!(op.equals("sub")||op.equals("sll")||op.equals("sra"))){
+                        loadReg(it.rhs,reg1);
+                        if(op.equals("add")){//-2048~2047
+                            if(imm>=-2048 && imm<=2047){
+                                if(curFunc.var_on_reg.containsKey(it.result)){//存在寄存器上
+                                    curBlock.addIns(new ASMarithimm(op+"i",reg1,curFunc.getRegister(curFunc.var_on_reg.get(it.result)),imm));
+                                }else{//存在栈中
+                                    curBlock.addIns(new ASMarithimm(op+"i",reg1,new ASMRegister("t5"),imm));
+                                    int offset=curFunc.getVar_offset(it.result);
+                                    AddStore(new ASMRegister("t5"),new ASMAddr(new ASMRegister("sp"),offset));
+                                }
+                                return;
+                            }
+                        }else{//0~4095
+                            if(imm>=0&&imm<=4095){
+                                if(curFunc.var_on_reg.containsKey(it.result)){//存在寄存器上
+                                    curBlock.addIns(new ASMarithimm(op+"i",reg1,curFunc.getRegister(curFunc.var_on_reg.get(it.result)),imm));
+                                }else{//存在栈中
+                                    curBlock.addIns(new ASMarithimm(op+"i",reg1,new ASMRegister("t5"),imm));
+                                    int offset=curFunc.getVar_offset(it.result);
+                                    AddStore(new ASMRegister("t5"),new ASMAddr(new ASMRegister("sp"),offset));
+                                }
+                                return;
+                            }
+                        }
+                    }
+                }else{;
+                    int imm;
+                    if(it.rhs==null){
+                        imm=0;
+                    }else{
+                        imm=Integer.parseInt(it.rhs);
+                    }
+                    if(!(op.equals("sub")||op.equals("sll")||op.equals("sra"))){
+                        loadReg(it.lhs,reg1);
+                        if(op.equals("add")){//-2048~2047
+                            if(imm>=-2048 && imm<=2047){
+                                if(curFunc.var_on_reg.containsKey(it.result)){//存在寄存器上
+                                    curBlock.addIns(new ASMarithimm(op+"i",reg1,curFunc.getRegister(curFunc.var_on_reg.get(it.result)),imm));
+                                }else{//存在栈中
+                                    curBlock.addIns(new ASMarithimm(op+"i",reg1,new ASMRegister("t5"),imm));
+                                    int offset=curFunc.getVar_offset(it.result);
+                                    AddStore(new ASMRegister("t5"),new ASMAddr(new ASMRegister("sp"),offset));
+                                }
+                                return;
+                            }
+                        }else{//0~4095
+                            if(imm>=0&&imm<=4095){
+                                if(curFunc.var_on_reg.containsKey(it.result)){//存在寄存器上
+                                    curBlock.addIns(new ASMarithimm(op+"i",reg1,curFunc.getRegister(curFunc.var_on_reg.get(it.result)),imm));
+                                }else{//存在栈中
+                                    curBlock.addIns(new ASMarithimm(op+"i",reg1,new ASMRegister("t5"),imm));
+                                    int offset=curFunc.getVar_offset(it.result);
+                                    AddStore(new ASMRegister("t5"),new ASMAddr(new ASMRegister("sp"),offset));
+                                }
+                                return;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        loadReg(it.lhs,reg1);
+        loadReg(it.rhs,reg2);
         if(curFunc.var_on_reg.containsKey(it.result)){//存在寄存器上
             curBlock.addIns(new ASMarith(op,reg1,reg2,curFunc.getRegister(curFunc.var_on_reg.get(it.result))));
         }else{//存在栈中
