@@ -17,6 +17,7 @@ public class Mem2Reg {
     public HashMap<String,HashMap<IRBlock,String>>deflist;//每个局部变量在每个块中的最后一次def
     public HashMap<String, Stack<String>>valuestack;//每个变量名的栈顶就是当前的变量值
     public HashMap<String,String>replaceMap;//记录每个变量应该被重命名为什么值
+    public HashSet<Instruction>deletelist;
 
     public Mem2Reg(IRProgram program) {
         this.program = program;
@@ -28,6 +29,7 @@ public class Mem2Reg {
         deflist = new HashMap<>();
         valuestack = new HashMap<>();
         replaceMap = new HashMap<>();
+        deletelist = new HashSet<>();
     }
 
     public void work(){
@@ -131,7 +133,6 @@ public class Mem2Reg {
             }
         }
 
-        ArrayList<Instruction>deletelist = new ArrayList<>();
         for(var instr:block.statements){
             if(instr instanceof Load){
                 String name = ((Load) instr).pointer;
@@ -161,7 +162,6 @@ public class Mem2Reg {
                 deletelist.add(instr);
             }
         }
-        block.statements.removeAll(deletelist);
 
         //用当前值更新CFG上所有后继中的phi
         for(var succ:block.succ){
@@ -199,6 +199,7 @@ public class Mem2Reg {
         for(var instr:curFunc.entry.statements){
             instr.rename(replaceMap);
         }
+        curFunc.entry.statements.removeAll(deletelist);
         curFunc.entry.terminalStmt.rename(replaceMap);
         for(var block:curFunc.body){
             for(var phiname:block.philist.keySet()){
@@ -207,6 +208,7 @@ public class Mem2Reg {
             for(var instr:block.statements){
                 instr.rename(replaceMap);
             }
+            block.statements.removeAll(deletelist);
             block.terminalStmt.rename(replaceMap);
         }
     }
